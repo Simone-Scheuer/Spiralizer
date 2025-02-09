@@ -7,9 +7,9 @@ import { SpiralControls } from './features/SpiralControls'
 import { SpiralConfig } from './models/types'
 
 const defaultConfig: SpiralConfig = {
-  stepLength: 5,        // Start with smaller steps for tighter initial spiral
-  angleChange: 15,      // Smaller angle for smoother spiral
-  angleIncrement: 0.05, // Subtle angle increment
+  stepLength: 10,       // Larger steps for classic spiral
+  angleChange: 15,      // Fixed angle for consistent spiral
+  angleIncrement: 0,    // No increment for classic spiral
   speed: 20,           // Faster animation for smoother appearance
   color: '#00ff00',
   lineWidth: 2,
@@ -22,7 +22,10 @@ const defaultConfig: SpiralConfig = {
   rotationOffset: 0,
   rainbowMode: false,
   rainbowSpeed: 1,
-  blendMode: 'source-over'
+  blendMode: 'source-over',
+  // Origin position (0.5, 0.5 is center)
+  originX: 0.5,
+  originY: 0.5
 }
 
 export default function Home() {
@@ -30,11 +33,20 @@ export default function Home() {
   const canvasRef = useRef<SpiralCanvasRef>(null)
 
   const handleReset = () => {
-    // Only pause the animation and reset the canvas
+    // Reset canvas and ensure it's paused
     setConfig(prev => ({ ...prev, isPaused: true }))
-    // Use setTimeout to ensure the pause state is set before restarting
+    // Only reset the canvas, don't start animation
     setTimeout(() => {
-      canvasRef.current?.startAnimation()
+      canvasRef.current?.resetCanvas()
+    }, 0)
+  }
+
+  const handleResetToDefaults = () => {
+    // Reset all settings to defaults (which includes isPaused: true)
+    setConfig({ ...defaultConfig, isPaused: true })
+    // Only reset the canvas, don't start animation
+    setTimeout(() => {
+      canvasRef.current?.resetCanvas()
     }, 0)
   }
 
@@ -59,6 +71,7 @@ export default function Home() {
             config={config} 
             onChange={setConfig}
             onReset={handleReset}
+            onResetToDefaults={handleResetToDefaults}
           />
           <Box 
             height="85vh" 

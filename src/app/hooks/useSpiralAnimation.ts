@@ -41,13 +41,13 @@ export const useSpiralAnimation = (
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Initialize canvas size and starting position only once
+    // Initialize canvas size if needed
     if (!isInitializedRef.current) {
       canvas.width = canvas.clientWidth
       canvas.height = canvas.clientHeight
       currentPosRef.current = {
-        x: canvas.width / 2,
-        y: canvas.height / 2
+        x: canvas.width * config.originX,
+        y: canvas.height * config.originY
       }
       isInitializedRef.current = true
       stepCountRef.current = 0
@@ -110,43 +110,64 @@ export const useSpiralAnimation = (
     }
   }, [canvasRef, config, getLineColor])
 
-  const startAnimation = useCallback(() => {
+  const resetCanvas = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Clean up any existing animation
+    // First clean up any running animations
     cleanup()
-
-    // Reset canvas and animation state
+    
+    // Reset canvas dimensions and clear
+    canvas.width = canvas.clientWidth
+    canvas.height = canvas.clientHeight
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    currentPosRef.current = { x: 0, y: 0 }
+    
+    // Reset all animation state
+    isInitializedRef.current = false
     currentAngleRef.current = 0
     stepCountRef.current = 0
     hueRef.current = 0
-    isInitializedRef.current = false
-
-    // Start new animation if not paused
-    if (!config.isPaused) {
-      animationFrameRef.current = requestAnimationFrame(drawSpiral)
+    currentPosRef.current = {
+      x: canvas.width * config.originX,
+      y: canvas.height * config.originY
     }
-  }, [canvasRef, drawSpiral, cleanup, config.isPaused])
+  }, [cleanup, config.originX, config.originY])
 
   // Handle pausing and resuming
   useEffect(() => {
-    if (config.isPaused) {
-      cleanup()
-    } else if (isInitializedRef.current) {
+    cleanup() // Always cleanup first
+    
+    if (!config.isPaused) {
+      // Only start animation if explicitly unpaused
+      isInitializedRef.current = false // Reset initialization state
       animationFrameRef.current = requestAnimationFrame(drawSpiral)
     }
+    
+    return cleanup // Cleanup on effect change
   }, [config.isPaused, drawSpiral, cleanup])
+
+  // Handle canvas resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current) {
+        isInitializedRef.current = false
+        if (!config.isPaused) {
+          animationFrameRef.current = requestAnimationFrame(drawSpiral)
+        }
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [drawSpiral, config.isPaused])
 
   // Cleanup on unmount
   useEffect(() => {
     return cleanup
   }, [cleanup])
 
-  return { startAnimation }
+  return { startAnimation: drawSpiral, resetCanvas }
 } 

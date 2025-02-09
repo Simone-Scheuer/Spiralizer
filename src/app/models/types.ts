@@ -15,4 +15,7 @@ export interface SpiralConfig {
   rainbowMode: boolean   // Whether to cycle through colors
   rainbowSpeed: number   // Speed of color cycling
   blendMode: string     // Canvas blend mode for interesting effects
+  // Origin position (0-1 represents percentage of canvas size)
+  originX: number       // X position of spiral origin (0-1)
+  originY: number       // Y position of spiral origin (0-1)
 } 

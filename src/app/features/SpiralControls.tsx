@@ -21,6 +21,7 @@ interface SpiralControlsProps {
   config: SpiralConfig
   onChange: (config: SpiralConfig) => void
   onReset: () => void
+  onResetToDefaults: () => void
 }
 
 const BLEND_MODES = [
@@ -42,9 +43,13 @@ const BLEND_MODES = [
   'luminosity'
 ]
 
-export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProps) => {
+export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }: SpiralControlsProps) => {
   const handleChange = (key: keyof SpiralConfig, value: number | string | boolean) => {
-    onChange({ ...config, [key]: value })
+    if (key !== 'isPaused' && !config.isPaused) {
+      onChange({ ...config, [key]: value, isPaused: true })
+    } else {
+      onChange({ ...config, [key]: value })
+    }
   }
 
   return (
@@ -88,16 +93,29 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
           flex={1}
           variant="outline"
         >
-          ↺ Reset
+          ↺ Restart Canvas
         </Button>
       </HStack>
+
+      <Button
+        onClick={onResetToDefaults}
+        colorScheme="purple"
+        size="md"
+        width="100%"
+        variant="ghost"
+      >
+        Reset All Settings to Defaults
+      </Button>
 
       <Divider />
 
       <Text fontSize="lg" fontWeight="bold" width="100%">Basic Controls</Text>
 
       <Box width="100%">
-        <Text mb={2} fontWeight="medium">Step Length</Text>
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Step Length</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{config.stepLength.toFixed(1)}</Text>
+        </HStack>
         <Tooltip label={config.stepLength}>
           <Slider
             value={config.stepLength}
@@ -106,9 +124,9 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
             max={100}
             step={0.1}
           >
-            <SliderMark value={0.1} mt={2} ml={-4} fontSize="xs">0.1</SliderMark>
-            <SliderMark value={50} mt={2} ml={-6} fontSize="xs">50</SliderMark>
-            <SliderMark value={100} mt={2} ml={-6} fontSize="xs">100</SliderMark>
+            <SliderMark value={0.1} mt={2} fontSize="xs">0.1</SliderMark>
+            <SliderMark value={50} mt={2} ml={-2} fontSize="xs">50</SliderMark>
+            <SliderMark value={100} mt={2} ml={-4} fontSize="xs">100</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -118,7 +136,10 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
       </Box>
 
       <Box width="100%">
-        <Text mb={2} fontWeight="medium">Angle Change (degrees)</Text>
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Angle Change (degrees)</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{config.angleChange.toFixed(1)}°</Text>
+        </HStack>
         <Tooltip label={config.angleChange}>
           <Slider
             value={config.angleChange}
@@ -127,9 +148,9 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
             max={90}
             step={0.1}
           >
-            <SliderMark value={0.1} mt={2} ml={-4} fontSize="xs">0.1°</SliderMark>
-            <SliderMark value={45} mt={2} ml={-6} fontSize="xs">45°</SliderMark>
-            <SliderMark value={90} mt={2} ml={-6} fontSize="xs">90°</SliderMark>
+            <SliderMark value={0.1} mt={2} fontSize="xs">0.1°</SliderMark>
+            <SliderMark value={45} mt={2} ml={-2} fontSize="xs">45°</SliderMark>
+            <SliderMark value={90} mt={2} ml={-4} fontSize="xs">90°</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -139,7 +160,10 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
       </Box>
 
       <Box width="100%">
-        <Text mb={2} fontWeight="medium">Angle Increment (per rotation)</Text>
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Angle Increment (per rotation)</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{config.angleIncrement.toFixed(3)}°</Text>
+        </HStack>
         <Tooltip label={config.angleIncrement}>
           <Slider
             value={config.angleIncrement}
@@ -148,9 +172,9 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
             max={1}
             step={0.01}
           >
-            <SliderMark value={-1} mt={2} ml={-6} fontSize="xs">-1°</SliderMark>
-            <SliderMark value={0} mt={2} ml={-3} fontSize="xs">0°</SliderMark>
-            <SliderMark value={1} mt={2} ml={-5} fontSize="xs">+1°</SliderMark>
+            <SliderMark value={-1} mt={2} fontSize="xs">-1°</SliderMark>
+            <SliderMark value={0} mt={2} ml={-1} fontSize="xs">0°</SliderMark>
+            <SliderMark value={1} mt={2} ml={-2} fontSize="xs">+1°</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -160,7 +184,10 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
       </Box>
 
       <Box width="100%">
-        <Text mb={2} fontWeight="medium">Animation Speed</Text>
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Animation Speed</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{config.speed}ms</Text>
+        </HStack>
         <Tooltip label={`${config.speed}ms`}>
           <Slider
             value={config.speed}
@@ -169,9 +196,9 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
             max={200}
             step={1}
           >
-            <SliderMark value={0} mt={2} ml={-6} fontSize="xs">Fast</SliderMark>
-            <SliderMark value={100} mt={2} ml={-5} fontSize="xs">Med</SliderMark>
-            <SliderMark value={200} mt={2} ml={-6} fontSize="xs">Slow</SliderMark>
+            <SliderMark value={0} mt={2} fontSize="xs">Fast</SliderMark>
+            <SliderMark value={100} mt={2} ml={-2} fontSize="xs">Med</SliderMark>
+            <SliderMark value={200} mt={2} ml={-4} fontSize="xs">Slow</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -181,7 +208,10 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
       </Box>
 
       <Box width="100%">
-        <Text mb={2} fontWeight="medium">Line Width</Text>
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Line Width</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{config.lineWidth.toFixed(1)}px</Text>
+        </HStack>
         <Tooltip label={config.lineWidth}>
           <Slider
             value={config.lineWidth}
@@ -190,9 +220,9 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
             max={20}
             step={0.1}
           >
-            <SliderMark value={0.1} mt={2} ml={-4} fontSize="xs">0.1px</SliderMark>
-            <SliderMark value={10} mt={2} ml={-4} fontSize="xs">10px</SliderMark>
-            <SliderMark value={20} mt={2} ml={-5} fontSize="xs">20px</SliderMark>
+            <SliderMark value={0.1} mt={2} fontSize="xs">0.1px</SliderMark>
+            <SliderMark value={10} mt={2} ml={-2} fontSize="xs">10px</SliderMark>
+            <SliderMark value={20} mt={2} ml={-4} fontSize="xs">20px</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -206,18 +236,21 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
       <Text fontSize="lg" fontWeight="bold" width="100%">Advanced Controls</Text>
 
       <Box width="100%">
-        <Text mb={2} fontWeight="medium">Multiple Lines</Text>
-        <Tooltip label={config.multiLineCount}>
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Origin X Position</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{(config.originX * 100).toFixed(1)}%</Text>
+        </HStack>
+        <Tooltip label={`${(config.originX * 100).toFixed(1)}%`}>
           <Slider
-            value={config.multiLineCount}
-            onChange={(v) => handleChange('multiLineCount', v)}
-            min={1}
-            max={10}
-            step={1}
+            value={config.originX}
+            onChange={(v) => handleChange('originX', v)}
+            min={0}
+            max={1}
+            step={0.01}
           >
-            <SliderMark value={1} mt={2} ml={-4} fontSize="xs">1</SliderMark>
-            <SliderMark value={5} mt={2} ml={-4} fontSize="xs">5</SliderMark>
-            <SliderMark value={10} mt={2} ml={-4} fontSize="xs">10</SliderMark>
+            <SliderMark value={0} mt={2} fontSize="xs">Left</SliderMark>
+            <SliderMark value={0.5} mt={2} ml={-2} fontSize="xs">Center</SliderMark>
+            <SliderMark value={1} mt={2} ml={-4} fontSize="xs">Right</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -227,7 +260,58 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
       </Box>
 
       <Box width="100%">
-        <Text mb={2} fontWeight="medium">Line Spacing</Text>
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Origin Y Position</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{(config.originY * 100).toFixed(1)}%</Text>
+        </HStack>
+        <Tooltip label={`${(config.originY * 100).toFixed(1)}%`}>
+          <Slider
+            value={config.originY}
+            onChange={(v) => handleChange('originY', v)}
+            min={0}
+            max={1}
+            step={0.01}
+          >
+            <SliderMark value={0} mt={2} fontSize="xs">Top</SliderMark>
+            <SliderMark value={0.5} mt={2} ml={-2} fontSize="xs">Center</SliderMark>
+            <SliderMark value={1} mt={2} ml={-4} fontSize="xs">Bottom</SliderMark>
+            <SliderTrack bg="whiteAlpha.200">
+              <SliderFilledTrack />
+            </SliderTrack>
+            <SliderThumb boxSize={6} />
+          </Slider>
+        </Tooltip>
+      </Box>
+
+      <Box width="100%">
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Multiple Lines</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{config.multiLineCount}</Text>
+        </HStack>
+        <Tooltip label={config.multiLineCount}>
+          <Slider
+            value={config.multiLineCount}
+            onChange={(v) => handleChange('multiLineCount', v)}
+            min={1}
+            max={10}
+            step={1}
+          >
+            <SliderMark value={1} mt={2} fontSize="xs">1</SliderMark>
+            <SliderMark value={5} mt={2} ml={-1} fontSize="xs">5</SliderMark>
+            <SliderMark value={10} mt={2} ml={-2} fontSize="xs">10</SliderMark>
+            <SliderTrack bg="whiteAlpha.200">
+              <SliderFilledTrack />
+            </SliderTrack>
+            <SliderThumb boxSize={6} />
+          </Slider>
+        </Tooltip>
+      </Box>
+
+      <Box width="100%">
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Line Spacing</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{config.multiLineSpacing}</Text>
+        </HStack>
         <Tooltip label={config.multiLineSpacing}>
           <Slider
             value={config.multiLineSpacing}
@@ -245,7 +329,10 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
       </Box>
 
       <Box width="100%">
-        <Text mb={2} fontWeight="medium">Step Growth</Text>
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Step Growth</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{config.stepMultiplier.toFixed(3)}</Text>
+        </HStack>
         <Tooltip label={config.stepMultiplier}>
           <Slider
             value={config.stepMultiplier}
@@ -263,7 +350,10 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
       </Box>
 
       <Box width="100%">
-        <Text mb={2} fontWeight="medium">Rotation Offset</Text>
+        <HStack mb={2} justify="space-between">
+          <Text fontWeight="medium">Rotation Offset</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{config.rotationOffset}°</Text>
+        </HStack>
         <Tooltip label={config.rotationOffset}>
           <Slider
             value={config.rotationOffset}
@@ -302,7 +392,10 @@ export const SpiralControls = ({ config, onChange, onReset }: SpiralControlsProp
 
       {config.rainbowMode && (
         <Box width="100%">
-          <Text mb={2} fontWeight="medium">Rainbow Speed</Text>
+          <HStack mb={2} justify="space-between">
+            <Text fontWeight="medium">Rainbow Speed</Text>
+            <Text fontSize="sm" color="whiteAlpha.700">{config.rainbowSpeed.toFixed(1)}</Text>
+          </HStack>
           <Tooltip label={config.rainbowSpeed}>
             <Slider
               value={config.rainbowSpeed}
