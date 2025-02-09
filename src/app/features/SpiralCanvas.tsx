@@ -14,16 +14,17 @@ export interface SpiralCanvasRef {
 export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
   ({ config }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
-    const { startAnimation, stopAnimation } = useSpiralAnimation(canvasRef, config)
+    const { startAnimation } = useSpiralAnimation(canvasRef, config)
 
     useImperativeHandle(ref, () => ({
       startAnimation
     }))
 
     useEffect(() => {
-      startAnimation()
-      return () => stopAnimation()
-    }, [config, startAnimation, stopAnimation])
+      if (!config.isPaused) {
+        startAnimation()
+      }
+    }, [config, startAnimation])
 
     return (
       <Box width="100%" height="100%" bg="black" borderRadius="md" overflow="hidden">
