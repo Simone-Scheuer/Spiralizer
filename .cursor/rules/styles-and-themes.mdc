@@ -1,0 +1,8 @@
+---
+description: When styling or themeing
+globs: *.tsx, *.css
+---
+## Theme Systems
+- This project uses Chakra as the themeing system
+- Attempt to create semantic theme items for themeing
+- There should not be direct references to colors except in the theme definition

@@ -1,0 +1,34 @@
+---
+description: Separate code logically using the following rules and structure
+globs: *.tsx, *.ts
+---
+# Code Separation
+Code separation is paramount. We do not want large page TSX files if you are creating sub components or elements within an object or page or route those should be broken out into the following folders mentioned below.
+
+As a general role, logic should always be extrapolated from presentation layer And often placed in something like a utile or hook file.
+
+Attempt to abstract both logic and visual layers where possible if it appears it is a reusable element place it in the appropriate level folder as defined below.
+
+
+# Folder Structure
+The following standard folders exist at both the app-level and component/page-level:
+
+- `features/` - For components and component-specific features
+- `models/` - For contexts and data models
+- `hooks/` - For custom React hooks
+- `utils/` - For utility functions and helpers
+
+Follow these guidelines for code organization:
+
+1. Component-First Development:
+   - Prefer breaking functionality into small, focused components
+   - If a piece of UI or logic is reusable or complex, make it a component
+   - Place components where they make sense: features/ for component-specific ones, or app/features/ for shared ones
+   - Keep render blocks clean and declarative by moving complex logic into hooks and components
+
+2. Code Placement:
+   - If the code is specific to one component/page, place it in that component's corresponding subfolder
+   - If code can be used by multiple components, generalize it and place it in the app-level folders
+   - Example: A date formatting utility used across the app goes in `app/utils/`
+
+This structure promotes component-based architecture for better reusability, maintainability, and testing, while keeping component-specific code close to its usage and shared code generalized at the app level.
