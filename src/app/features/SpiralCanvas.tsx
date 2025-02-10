@@ -51,4 +51,6 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
       </Box>
     )
   }
-) 
+)
+
+SpiralCanvas.displayName = 'SpiralCanvas' 

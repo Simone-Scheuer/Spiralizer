@@ -67,7 +67,6 @@ export const useSpiralAnimation = (
     // Draw multiple lines if configured
     for (let i = 0; i < config.multiLineCount; i++) {
       const angleOffset = (i * config.rotationOffset) * (Math.PI / 180)
-      const baseAngle = config.angleChange + (config.angleIncrement * stepCountRef.current)
       const angleInRadians = (currentAngleRef.current * Math.PI) / 180 + angleOffset
 
       // Calculate next position with dynamic step length
@@ -90,7 +89,6 @@ export const useSpiralAnimation = (
     }
 
     // Update position and continue the path
-    const baseAngle = config.angleChange + (config.angleIncrement * stepCountRef.current)
     const angleInRadians = currentAngleRef.current * Math.PI / 180
     const stepMultiplier = 1 + (stepCountRef.current * config.stepMultiplier)
     const currentStepLength = config.stepLength * stepMultiplier
@@ -101,7 +99,7 @@ export const useSpiralAnimation = (
     }
     
     // Update angle and step count
-    currentAngleRef.current += baseAngle
+    currentAngleRef.current += config.angleChange + (config.angleIncrement * stepCountRef.current)
     stepCountRef.current++
 
     // Update rainbow hue if enabled
@@ -115,7 +113,26 @@ export const useSpiralAnimation = (
         animationFrameRef.current = requestAnimationFrame(drawSpiral)
       }, config.speed)
     }
-  }, [canvasRef, config, getLineColor])
+  }, [
+    config.angleChange,
+    config.angleIncrement,
+    config.blendMode,
+    config.color,
+    config.fadeOpacity,
+    config.isPaused,
+    config.lineWidth,
+    config.multiLineCount,
+    config.multiLineSpacing,
+    config.originX,
+    config.originY,
+    config.rainbowMode,
+    config.rainbowSpeed,
+    config.rotationOffset,
+    config.speed,
+    config.stepLength,
+    config.stepMultiplier,
+    getLineColor
+  ])
 
   const resetCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -140,7 +157,7 @@ export const useSpiralAnimation = (
       x: canvas.width * config.originX,
       y: canvas.height * config.originY
     }
-  }, [cleanup, config.originX, config.originY])
+  }, [cleanup, config.originX, config.originY, canvasRef])
 
   // Handle pausing and resuming
   useEffect(() => {
@@ -165,7 +182,7 @@ export const useSpiralAnimation = (
         y: canvas.height * config.originY
       }
     }
-  }, [config.originX, config.originY])
+  }, [config.originX, config.originY, canvasRef])
 
   // Handle canvas resize
   useEffect(() => {
@@ -191,7 +208,7 @@ export const useSpiralAnimation = (
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [drawSpiral, config.isPaused, config.originX, config.originY])
+  }, [drawSpiral, config.isPaused, config.originX, config.originY, canvasRef])
 
   // Cleanup on unmount
   useEffect(() => {
