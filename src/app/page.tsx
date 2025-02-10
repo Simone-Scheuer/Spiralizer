@@ -79,7 +79,11 @@ export default function Home() {
             overflow="hidden"
             boxShadow="2xl"
           >
-            <SpiralCanvas ref={canvasRef} config={config} />
+            <SpiralCanvas 
+              ref={canvasRef} 
+              config={config} 
+              onChange={setConfig}
+            />
           </Box>
         </Grid>
       </Container>

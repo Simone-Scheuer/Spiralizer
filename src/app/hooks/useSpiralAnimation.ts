@@ -43,15 +43,22 @@ export const useSpiralAnimation = (
 
     // Initialize canvas size if needed
     if (!isInitializedRef.current) {
+      // Set canvas dimensions
       canvas.width = canvas.clientWidth
       canvas.height = canvas.clientHeight
+      
+      // Set initial position to origin
       currentPosRef.current = {
         x: canvas.width * config.originX,
         y: canvas.height * config.originY
       }
-      isInitializedRef.current = true
+      
+      // Reset animation state
+      currentAngleRef.current = 0
       stepCountRef.current = 0
       hueRef.current = 0
+      
+      isInitializedRef.current = true
     }
 
     // Set global composite operation
@@ -117,7 +124,6 @@ export const useSpiralAnimation = (
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // First clean up any running animations
     cleanup()
     
     // Reset canvas dimensions and clear
@@ -138,31 +144,54 @@ export const useSpiralAnimation = (
 
   // Handle pausing and resuming
   useEffect(() => {
-    cleanup() // Always cleanup first
+    cleanup()
     
     if (!config.isPaused) {
-      // Only start animation if explicitly unpaused
-      isInitializedRef.current = false // Reset initialization state
+      // Don't reset initialization when resuming
       animationFrameRef.current = requestAnimationFrame(drawSpiral)
     }
-    
-    return cleanup // Cleanup on effect change
   }, [config.isPaused, drawSpiral, cleanup])
+
+  // Handle origin changes
+  useEffect(() => {
+    // Only reinitialize if already initialized to prevent double initialization
+    if (isInitializedRef.current) {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      
+      // Update current position to new origin
+      currentPosRef.current = {
+        x: canvas.width * config.originX,
+        y: canvas.height * config.originY
+      }
+    }
+  }, [config.originX, config.originY])
 
   // Handle canvas resize
   useEffect(() => {
     const handleResize = () => {
-      if (canvasRef.current) {
-        isInitializedRef.current = false
-        if (!config.isPaused) {
-          animationFrameRef.current = requestAnimationFrame(drawSpiral)
-        }
+      const canvas = canvasRef.current
+      if (!canvas) return
+
+      // Update canvas dimensions
+      canvas.width = canvas.clientWidth
+      canvas.height = canvas.clientHeight
+      
+      // Update position to maintain relative origin position
+      currentPosRef.current = {
+        x: canvas.width * config.originX,
+        y: canvas.height * config.originY
+      }
+      
+      // Force redraw
+      if (!config.isPaused) {
+        animationFrameRef.current = requestAnimationFrame(drawSpiral)
       }
     }
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [drawSpiral, config.isPaused])
+  }, [drawSpiral, config.isPaused, config.originX, config.originY])
 
   // Cleanup on unmount
   useEffect(() => {

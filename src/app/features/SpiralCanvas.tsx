@@ -1,10 +1,11 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useCallback } from 'react'
+import { forwardRef, useImperativeHandle, useRef, useEffect } from 'react'
 import { Box } from '@chakra-ui/react'
 import { useSpiralAnimation } from '../hooks/useSpiralAnimation'
 import { SpiralConfig } from '../models/types'
 
 interface SpiralCanvasProps {
   config: SpiralConfig
+  onChange: (config: SpiralConfig) => void
 }
 
 export interface SpiralCanvasRef {
@@ -13,7 +14,7 @@ export interface SpiralCanvasRef {
 }
 
 export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
-  ({ config }, ref) => {
+  ({ config, onChange }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const { startAnimation, resetCanvas } = useSpiralAnimation(canvasRef, config)
 
@@ -22,51 +23,24 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
       resetCanvas
     }))
 
-    const drawOriginIndicator = useCallback(() => {
-      const canvas = canvasRef.current
-      if (!canvas) return
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-
-      // Draw crosshair
-      ctx.save()
-      ctx.globalCompositeOperation = 'source-over'
-      
-      const x = canvas.width * config.originX
-      const y = canvas.height * config.originY
-      const size = 10
-
-      // Draw outer circle
-      ctx.beginPath()
-      ctx.arc(x, y, size, 0, Math.PI * 2)
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
-      ctx.lineWidth = 2
-      ctx.stroke()
-
-      // Draw crosshair lines
-      ctx.beginPath()
-      ctx.moveTo(x - size, y)
-      ctx.lineTo(x + size, y)
-      ctx.moveTo(x, y - size)
-      ctx.lineTo(x, y + size)
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
-      ctx.lineWidth = 1
-      ctx.stroke()
-
-      // Draw center dot
-      ctx.beginPath()
-      ctx.arc(x, y, 2, 0, Math.PI * 2)
-      ctx.fillStyle = 'white'
-      ctx.fill()
-
-      ctx.restore()
-    }, [config.originX, config.originY])
-
+    // Handle keyboard shortcuts
     useEffect(() => {
-      if (config.isPaused) {
-        drawOriginIndicator()
+      const handleKeyPress = (e: KeyboardEvent) => {
+        // Only handle if not typing in an input
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+          return
+        }
+        
+        // Space to toggle pause
+        if (e.code === 'Space') {
+          e.preventDefault() // Prevent page scroll
+          onChange({ ...config, isPaused: !config.isPaused })
+        }
       }
-    }, [config.isPaused, config.originX, config.originY, drawOriginIndicator])
+
+      window.addEventListener('keydown', handleKeyPress)
+      return () => window.removeEventListener('keydown', handleKeyPress)
+    }, [config, onChange])
 
     return (
       <Box width="100%" height="100%" bg="black" borderRadius="md" overflow="hidden" position="relative">
