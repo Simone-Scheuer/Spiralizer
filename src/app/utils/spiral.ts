@@ -1,3 +1,5 @@
+import { SpiralConfig, SpiralConfigLocks } from '../models/types'
+
 export const BLEND_MODES = [
   'source-over',
   'multiply',
@@ -32,17 +34,17 @@ export const randomColor = () => {
 }
 
 // Function to create new random settings while respecting locks
-export const createRandomConfig = (currentConfig: any, locks: any) => {
+export const createRandomConfig = (currentConfig: SpiralConfig, locks: SpiralConfigLocks): SpiralConfig => {
   // Log current locks state for debugging
   console.log('Creating random config with locks:', locks)
   
   // Create new random settings, respecting locks
-  const newConfig = {
+  const newConfig: SpiralConfig = {
     ...currentConfig,
     stepLength: locks.stepLength ? currentConfig.stepLength : randomInRange(0.1, 100, 0.1),
     angleChange: locks.angleChange ? currentConfig.angleChange : randomInRange(0.1, 180, 0.1),
     angleIncrement: locks.angleIncrement ? currentConfig.angleIncrement : randomInRange(-2, 2, 0.01),
-    //speed: locks.speed ? currentConfig.speed : randomInRange(0, 300, 1),
+    speed: locks.speed ? currentConfig.speed : randomInRange(0, 300, 1),
     color: locks.color ? currentConfig.color : randomColor(),
     lineWidth: locks.lineWidth ? currentConfig.lineWidth : randomInRange(0.1, 20, 0.1),
     multiLineCount: locks.multiLineCount ? currentConfig.multiLineCount : randomInRange(1, 30, 1),
@@ -53,8 +55,8 @@ export const createRandomConfig = (currentConfig: any, locks: any) => {
     rainbowMode: locks.rainbowMode ? currentConfig.rainbowMode : Math.random() > 0.5,
     rainbowSpeed: locks.rainbowSpeed ? currentConfig.rainbowSpeed : randomInRange(0.1, 5, 0.1),
     blendMode: locks.blendMode ? currentConfig.blendMode : BLEND_MODES[Math.floor(Math.random() * BLEND_MODES.length)],
-    //originX: locks.originX ? currentConfig.originX : randomInRange(0, 1, 0.01),
-    //originY: locks.originY ? currentConfig.originY : randomInRange(0, 1, 0.01),
+    originX: locks.originX ? currentConfig.originX : randomInRange(0, 1, 0.01),
+    originY: locks.originY ? currentConfig.originY : randomInRange(0, 1, 0.01),
     isPaused: true // Always start paused with new random settings
   }
   

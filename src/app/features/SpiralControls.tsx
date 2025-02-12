@@ -17,8 +17,7 @@ import {
   IconButton
 } from '@chakra-ui/react'
 import { SpiralConfig, SpiralConfigLocks } from '../models/types'
-import { randomInRange, randomColor, BLEND_MODES, createRandomConfig } from '../utils/spiral'
-import { useState } from 'react'
+import { BLEND_MODES, createRandomConfig } from '../utils/spiral'
 import { LockIcon, UnlockIcon } from '@chakra-ui/icons'
 
 interface SpiralControlsProps {
