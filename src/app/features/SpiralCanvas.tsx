@@ -50,12 +50,16 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
             e.preventDefault()
             onReset()
             break
+          case 'KeyD':
+            e.preventDefault()
+            onResetToDefaults()
+            break
         }
       }
 
       window.addEventListener('keydown', handleKeyPress)
       return () => window.removeEventListener('keydown', handleKeyPress)
-    }, [config, onChange, onReset, locks])
+    }, [config, onChange, onReset, onResetToDefaults, locks])
 
     return (
       <Box width="100%" height="100%" bg="black" borderRadius="md" overflow="hidden" position="relative">
