@@ -4,7 +4,7 @@ import { Box, Container, Grid, Heading, Text, VStack } from '@chakra-ui/react'
 import { useRef, useState } from 'react'
 import { SpiralCanvas, SpiralCanvasRef } from './features/SpiralCanvas'
 import { SpiralControls } from './features/SpiralControls'
-import { SpiralConfig } from './models/types'
+import { SpiralConfig, SpiralConfigLocks } from './models/types'
 
 const defaultConfig: SpiralConfig = {
   stepLength: 10,       // Larger steps for classic spiral
@@ -30,6 +30,35 @@ const defaultConfig: SpiralConfig = {
 
 export default function Home() {
   const [config, setConfig] = useState<SpiralConfig>(defaultConfig)
+  const [locks, setLocks] = useState<SpiralConfigLocks>(() => {
+    // Initialize with all settings unlocked
+    const initialLocks = {} as SpiralConfigLocks
+    // Get all config keys except isPaused
+    const configKeys = Object.keys(defaultConfig).filter(key => key !== 'isPaused')
+    
+    // Try to load locks from localStorage
+    try {
+      const savedLocks = localStorage.getItem('spiralLocks')
+      if (savedLocks) {
+        const parsed = JSON.parse(savedLocks)
+        // Ensure all config keys are present in loaded locks
+        configKeys.forEach(key => {
+          if (!(key in parsed)) {
+            parsed[key] = false
+          }
+        })
+        return parsed
+      }
+    } catch (e) {
+      console.error('Error loading locks from localStorage:', e)
+    }
+
+    // If no saved locks or error, initialize all to unlocked
+    configKeys.forEach(key => {
+      initialLocks[key as keyof SpiralConfigLocks] = false
+    })
+    return initialLocks
+  })
   const canvasRef = useRef<SpiralCanvasRef>(null)
 
   const handleReset = () => {
@@ -72,6 +101,8 @@ export default function Home() {
             onChange={setConfig}
             onReset={handleReset}
             onResetToDefaults={handleResetToDefaults}
+            locks={locks}
+            onLocksChange={setLocks}
           />
           <Box 
             height="85vh" 
@@ -83,6 +114,9 @@ export default function Home() {
               ref={canvasRef} 
               config={config} 
               onChange={setConfig}
+              onReset={handleReset}
+              onResetToDefaults={handleResetToDefaults}
+              locks={locks}
             />
           </Box>
         </Grid>

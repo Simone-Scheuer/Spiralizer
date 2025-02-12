@@ -18,4 +18,9 @@ export interface SpiralConfig {
   // Origin position (0-1 represents percentage of canvas size)
   originX: number       // X position of spiral origin (0-1)
   originY: number       // Y position of spiral origin (0-1)
+}
+
+// Type for tracking which settings are locked
+export type SpiralConfigLocks = {
+  [K in keyof Omit<SpiralConfig, 'isPaused'>]: boolean
 } 

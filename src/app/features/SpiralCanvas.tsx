@@ -1,11 +1,15 @@
 import { forwardRef, useImperativeHandle, useRef, useEffect } from 'react'
 import { Box } from '@chakra-ui/react'
 import { useSpiralAnimation } from '../hooks/useSpiralAnimation'
-import { SpiralConfig } from '../models/types'
+import { SpiralConfig, SpiralConfigLocks } from '../models/types'
+import { createRandomConfig } from '../utils/spiral'
 
 interface SpiralCanvasProps {
   config: SpiralConfig
   onChange: (config: SpiralConfig) => void
+  onReset: () => void
+  onResetToDefaults: () => void
+  locks: SpiralConfigLocks
 }
 
 export interface SpiralCanvasRef {
@@ -14,7 +18,7 @@ export interface SpiralCanvasRef {
 }
 
 export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
-  ({ config, onChange }, ref) => {
+  ({ config, onChange, onReset, onResetToDefaults, locks }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const { startAnimation, resetCanvas } = useSpiralAnimation(canvasRef, config)
 
@@ -31,16 +35,27 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
           return
         }
         
-        // Space to toggle pause
-        if (e.code === 'Space') {
-          e.preventDefault() // Prevent page scroll
-          onChange({ ...config, isPaused: !config.isPaused })
+        switch (e.code) {
+          case 'Space':
+            e.preventDefault() // Prevent page scroll
+            onChange({ ...config, isPaused: !config.isPaused })
+            break
+          case 'KeyR':
+            e.preventDefault()
+            // Use the shared randomization function
+            const newConfig = createRandomConfig(config, locks)
+            onChange(newConfig)
+            break
+          case 'KeyU':
+            e.preventDefault()
+            onReset()
+            break
         }
       }
 
       window.addEventListener('keydown', handleKeyPress)
       return () => window.removeEventListener('keydown', handleKeyPress)
-    }, [config, onChange])
+    }, [config, onChange, onReset, locks])
 
     return (
       <Box width="100%" height="100%" bg="black" borderRadius="md" overflow="hidden" position="relative">

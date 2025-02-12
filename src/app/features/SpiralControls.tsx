@@ -13,37 +13,24 @@ import {
   Tooltip,
   SliderMark,
   Switch,
-  Select
+  Select,
+  IconButton
 } from '@chakra-ui/react'
-import { SpiralConfig } from '../models/types'
+import { SpiralConfig, SpiralConfigLocks } from '../models/types'
+import { randomInRange, randomColor, BLEND_MODES, createRandomConfig } from '../utils/spiral'
+import { useState } from 'react'
+import { LockIcon, UnlockIcon } from '@chakra-ui/icons'
 
 interface SpiralControlsProps {
   config: SpiralConfig
   onChange: (config: SpiralConfig) => void
   onReset: () => void
   onResetToDefaults: () => void
+  locks: SpiralConfigLocks
+  onLocksChange: (locks: SpiralConfigLocks) => void
 }
 
-const BLEND_MODES = [
-  'source-over',
-  'multiply',
-  'screen',
-  'overlay',
-  'darken',
-  'lighten',
-  'color-dodge',
-  'color-burn',
-  'hard-light',
-  'soft-light',
-  'difference',
-  'exclusion',
-  'hue',
-  'saturation',
-  'color',
-  'luminosity'
-]
-
-export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }: SpiralControlsProps) => {
+export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, locks, onLocksChange }: SpiralControlsProps) => {
   const handleChange = (key: keyof SpiralConfig, value: number | string | boolean) => {
     if (key !== 'isPaused' && !config.isPaused) {
       onChange({ ...config, [key]: value, isPaused: true })
@@ -51,6 +38,93 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       onChange({ ...config, [key]: value })
     }
   }
+
+  const toggleLock = (key: keyof SpiralConfigLocks) => {
+    const newLocks = {
+      ...locks,
+      [key]: !locks[key]
+    }
+    try {
+      localStorage.setItem('spiralLocks', JSON.stringify(newLocks))
+    } catch (e) {
+      console.error('Error saving locks to localStorage:', e)
+    }
+    onLocksChange(newLocks)
+  }
+
+  const unlockAll = () => {
+    const allUnlocked = {} as SpiralConfigLocks
+    Object.keys(config).forEach(key => {
+      if (key !== 'isPaused') {
+        allUnlocked[key as keyof SpiralConfigLocks] = false
+      }
+    })
+    try {
+      localStorage.setItem('spiralLocks', JSON.stringify(allUnlocked))
+    } catch (e) {
+      console.error('Error saving locks to localStorage:', e)
+    }
+    onLocksChange(allUnlocked)
+  }
+
+  const lockAll = () => {
+    const allLocked = {} as SpiralConfigLocks
+    Object.keys(config).forEach(key => {
+      if (key !== 'isPaused') {
+        allLocked[key as keyof SpiralConfigLocks] = true
+      }
+    })
+    try {
+      localStorage.setItem('spiralLocks', JSON.stringify(allLocked))
+    } catch (e) {
+      console.error('Error saving locks to localStorage:', e)
+    }
+    onLocksChange(allLocked)
+  }
+
+  const handleRandomize = () => {
+    const newConfig = createRandomConfig(config, locks)
+    onChange(newConfig)
+  }
+
+  // Helper component for control headers with lock button
+  const ControlHeader = ({ label, value, settingKey }: { label: string, value: string, settingKey: keyof SpiralConfigLocks }) => (
+    <HStack mb={2} justify="space-between">
+      <HStack>
+        <Text fontWeight="medium">{label}</Text>
+        <IconButton
+          aria-label={locks[settingKey] ? "Unlock setting" : "Lock setting"}
+          icon={locks[settingKey] ? <LockIcon /> : <UnlockIcon />}
+          size="xs"
+          variant="ghost"
+          onClick={() => toggleLock(settingKey)}
+        />
+      </HStack>
+      <Text fontSize="sm" color="whiteAlpha.700">{value}</Text>
+    </HStack>
+  )
+
+  // Helper component for boolean controls with lock button
+  const BooleanControl = ({ label, value, settingKey }: { label: string, value: boolean, settingKey: keyof SpiralConfigLocks }) => (
+    <HStack width="100%" justify="space-between">
+      <HStack>
+        <Text fontWeight="medium">{label}</Text>
+        <IconButton
+          aria-label={locks[settingKey] ? "Unlock setting" : "Lock setting"}
+          icon={locks[settingKey] ? <LockIcon /> : <UnlockIcon />}
+          size="xs"
+          variant="ghost"
+          onClick={() => toggleLock(settingKey)}
+        />
+      </HStack>
+      <Switch
+        id={`switch-${settingKey}`}
+        name={settingKey}
+        isChecked={value}
+        onChange={(e) => handleChange(settingKey, e.target.checked)}
+      />
+    </HStack>
+  )
 
   return (
     <VStack 
@@ -79,7 +153,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       <HStack width="100%" spacing={4}>
         <Button
           onClick={() => handleChange('isPaused', !config.isPaused)}
-          colorScheme={config.isPaused ? 'green' : 'red'}
+          colorScheme={config.isPaused ? 'teal' : 'pink'} 
           size="lg"
           flex={1}
           variant="solid"
@@ -88,34 +162,68 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
         </Button>
         <Button 
           onClick={onReset} 
-          colorScheme="blue" 
+          colorScheme="teal"
           size="lg"
           flex={1}
-          variant="outline"
+          variant="solid"
         >
           ↺ Restart Canvas
         </Button>
       </HStack>
 
-      <Button
-        onClick={onResetToDefaults}
-        colorScheme="purple"
-        size="md"
-        width="100%"
-        variant="ghost"
-      >
-        Reset All Settings to Defaults
-      </Button>
+      <HStack width="100%" spacing={4}>
+        <Button
+          onClick={onResetToDefaults}
+          colorScheme="orange"
+          size="md"
+          flex={1}
+          variant="outline"
+        >
+          Reset All Settings
+        </Button>
+        <Button
+          onClick={handleRandomize}
+          colorScheme="purple"
+          size="md"
+          flex={1}
+          variant="outline"
+        >
+          Randomize Settings
+        </Button>
+      </HStack>
+
+      <HStack width="100%" spacing={4}>
+        <Button
+          onClick={unlockAll}
+          colorScheme="blue"
+          backgroundColor="white.200"
+          size="md"
+          flex={1}
+          variant="outline"
+        >
+          🔓 Unlock All
+        </Button>
+        <Button
+          onClick={lockAll}
+          colorScheme="blue"
+          size="md"
+          flex={1}
+          variant="outline"
+        >
+          🔒 Lock All
+        </Button>
+      </HStack>
 
       <Divider />
 
       <Text fontSize="lg" fontWeight="bold" width="100%">Basic Controls</Text>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Step Length</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{config.stepLength.toFixed(1)}</Text>
-        </HStack>
+        <ControlHeader 
+          label="Step Length" 
+          value={config.stepLength.toFixed(1)} 
+          settingKey="stepLength"
+        />
         <Tooltip label={config.stepLength}>
           <Slider
             value={config.stepLength}
@@ -136,21 +244,22 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       </Box>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Angle Change (degrees)</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{config.angleChange.toFixed(1)}°</Text>
-        </HStack>
+        <ControlHeader 
+          label="Angle Change (degrees)" 
+          value={`${config.angleChange.toFixed(1)}°`}
+          settingKey="angleChange"
+        />
         <Tooltip label={config.angleChange}>
           <Slider
             value={config.angleChange}
             onChange={(v) => handleChange('angleChange', v)}
             min={0.1}
-            max={90}
+            max={180}
             step={0.1}
           >
             <SliderMark value={0.1} mt={2} fontSize="xs">0.1°</SliderMark>
-            <SliderMark value={45} mt={2} ml={-2} fontSize="xs">45°</SliderMark>
-            <SliderMark value={90} mt={2} ml={-4} fontSize="xs">90°</SliderMark>
+            <SliderMark value={90} mt={2} ml={-2} fontSize="xs">90°</SliderMark>
+            <SliderMark value={180} mt={2} ml={-4} fontSize="xs">180°</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -160,21 +269,22 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       </Box>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Angle Increment (per rotation)</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{config.angleIncrement.toFixed(3)}°</Text>
-        </HStack>
+        <ControlHeader 
+          label="Angle Increment (per rotation)" 
+          value={`${config.angleIncrement.toFixed(3)}°`}
+          settingKey="angleIncrement"
+        />
         <Tooltip label={config.angleIncrement}>
           <Slider
             value={config.angleIncrement}
             onChange={(v) => handleChange('angleIncrement', v)}
-            min={-1}
-            max={1}
+            min={-2}
+            max={2}
             step={0.01}
           >
-            <SliderMark value={-1} mt={2} fontSize="xs">-1°</SliderMark>
+            <SliderMark value={-2} mt={2} fontSize="xs">-2°</SliderMark>
             <SliderMark value={0} mt={2} ml={-1} fontSize="xs">0°</SliderMark>
-            <SliderMark value={1} mt={2} ml={-2} fontSize="xs">+1°</SliderMark>
+            <SliderMark value={2} mt={2} ml={-2} fontSize="xs">+2°</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -184,21 +294,22 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       </Box>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Animation Speed</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{config.speed}ms</Text>
-        </HStack>
+        <ControlHeader 
+          label="Animation Speed" 
+          value={`${config.speed}ms`}
+          settingKey="speed"
+        />
         <Tooltip label={`${config.speed}ms`}>
           <Slider
             value={config.speed}
             onChange={(v) => handleChange('speed', v)}
             min={0}
-            max={200}
+            max={300}
             step={1}
           >
             <SliderMark value={0} mt={2} fontSize="xs">Fast</SliderMark>
-            <SliderMark value={100} mt={2} ml={-2} fontSize="xs">Med</SliderMark>
-            <SliderMark value={200} mt={2} ml={-4} fontSize="xs">Slow</SliderMark>
+            <SliderMark value={150} mt={2} ml={-2} fontSize="xs">Med</SliderMark>
+            <SliderMark value={300} mt={2} ml={-4} fontSize="xs">Slow</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -208,21 +319,22 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       </Box>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Line Width</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{config.lineWidth.toFixed(1)}px</Text>
-        </HStack>
+        <ControlHeader 
+          label="Line Width" 
+          value={`${config.lineWidth.toFixed(1)}px`}
+          settingKey="lineWidth"
+        />
         <Tooltip label={config.lineWidth}>
           <Slider
             value={config.lineWidth}
             onChange={(v) => handleChange('lineWidth', v)}
             min={0.1}
-            max={20}
+            max={40}
             step={0.1}
           >
             <SliderMark value={0.1} mt={2} fontSize="xs">0.1px</SliderMark>
-            <SliderMark value={10} mt={2} ml={-2} fontSize="xs">10px</SliderMark>
-            <SliderMark value={20} mt={2} ml={-4} fontSize="xs">20px</SliderMark>
+            <SliderMark value={20} mt={2} ml={-2} fontSize="xs">20px</SliderMark>
+            <SliderMark value={40} mt={2} ml={-4} fontSize="xs">40px</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -236,10 +348,11 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       <Text fontSize="lg" fontWeight="bold" width="100%">Advanced Controls</Text>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Origin X Position</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{(config.originX * 100).toFixed(1)}%</Text>
-        </HStack>
+        <ControlHeader 
+          label="Origin X Position" 
+          value={`${(config.originX * 100).toFixed(1)}%`}
+          settingKey="originX"
+        />
         <Tooltip label={`${(config.originX * 100).toFixed(1)}%`}>
           <Slider
             value={config.originX}
@@ -260,10 +373,11 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       </Box>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Origin Y Position</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{(config.originY * 100).toFixed(1)}%</Text>
-        </HStack>
+        <ControlHeader 
+          label="Origin Y Position" 
+          value={`${(config.originY * 100).toFixed(1)}%`}
+          settingKey="originY"
+        />
         <Tooltip label={`${(config.originY * 100).toFixed(1)}%`}>
           <Slider
             value={config.originY}
@@ -284,21 +398,22 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       </Box>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Multiple Lines</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{config.multiLineCount}</Text>
-        </HStack>
+        <ControlHeader 
+          label="Multiple Lines" 
+          value={config.multiLineCount.toString()}
+          settingKey="multiLineCount"
+        />
         <Tooltip label={config.multiLineCount}>
           <Slider
             value={config.multiLineCount}
             onChange={(v) => handleChange('multiLineCount', v)}
             min={1}
-            max={10}
+            max={30}
             step={1}
           >
             <SliderMark value={1} mt={2} fontSize="xs">1</SliderMark>
-            <SliderMark value={5} mt={2} ml={-1} fontSize="xs">5</SliderMark>
-            <SliderMark value={10} mt={2} ml={-2} fontSize="xs">10</SliderMark>
+            <SliderMark value={15} mt={2} ml={-1} fontSize="xs">15</SliderMark>
+            <SliderMark value={30} mt={2} ml={-2} fontSize="xs">30</SliderMark>
             <SliderTrack bg="whiteAlpha.200">
               <SliderFilledTrack />
             </SliderTrack>
@@ -308,10 +423,11 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       </Box>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Line Spacing</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{config.multiLineSpacing}</Text>
-        </HStack>
+        <ControlHeader 
+          label="Line Spacing" 
+          value={config.multiLineSpacing.toString()}
+          settingKey="multiLineSpacing"
+        />
         <Tooltip label={config.multiLineSpacing}>
           <Slider
             value={config.multiLineSpacing}
@@ -329,10 +445,11 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       </Box>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Step Growth</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{config.stepMultiplier.toFixed(3)}</Text>
-        </HStack>
+        <ControlHeader 
+          label="Step Growth" 
+          value={config.stepMultiplier.toFixed(3)}
+          settingKey="stepMultiplier"
+        />
         <Tooltip label={config.stepMultiplier}>
           <Slider
             value={config.stepMultiplier}
@@ -350,10 +467,11 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       </Box>
 
       <Box width="100%">
-        <HStack mb={2} justify="space-between">
-          <Text fontWeight="medium">Rotation Offset</Text>
-          <Text fontSize="sm" color="whiteAlpha.700">{config.rotationOffset}°</Text>
-        </HStack>
+        <ControlHeader 
+          label="Rotation Offset" 
+          value={`${config.rotationOffset}°`}
+          settingKey="rotationOffset"
+        />
         <Tooltip label={config.rotationOffset}>
           <Slider
             value={config.rotationOffset}
@@ -374,28 +492,25 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
 
       <Text fontSize="lg" fontWeight="bold" width="100%">Effects</Text>
 
-      <HStack width="100%" justify="space-between">
-        <Text fontWeight="medium">Fade Lines</Text>
-        <Switch
-          isChecked={config.fadeOpacity}
-          onChange={(e) => handleChange('fadeOpacity', e.target.checked)}
-        />
-      </HStack>
+      <BooleanControl
+        label="Fade Lines"
+        value={config.fadeOpacity}
+        settingKey="fadeOpacity"
+      />
 
-      <HStack width="100%" justify="space-between">
-        <Text fontWeight="medium">Rainbow Mode</Text>
-        <Switch
-          isChecked={config.rainbowMode}
-          onChange={(e) => handleChange('rainbowMode', e.target.checked)}
-        />
-      </HStack>
+      <BooleanControl
+        label="Rainbow Mode"
+        value={config.rainbowMode}
+        settingKey="rainbowMode"
+      />
 
       {config.rainbowMode && (
         <Box width="100%">
-          <HStack mb={2} justify="space-between">
-            <Text fontWeight="medium">Rainbow Speed</Text>
-            <Text fontSize="sm" color="whiteAlpha.700">{config.rainbowSpeed.toFixed(1)}</Text>
-          </HStack>
+          <ControlHeader 
+            label="Rainbow Speed" 
+            value={`${config.rainbowSpeed.toFixed(1)}`}
+            settingKey="rainbowSpeed"
+          />
           <Tooltip label={config.rainbowSpeed}>
             <Slider
               value={config.rainbowSpeed}
@@ -414,8 +529,21 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
       )}
 
       <Box width="100%">
-        <Text mb={2} fontWeight="medium">Blend Mode</Text>
+        <HStack mb={2} justify="space-between">
+          <HStack>
+            <Text fontWeight="medium">Blend Mode</Text>
+            <IconButton
+              aria-label={locks.blendMode ? "Unlock setting" : "Lock setting"}
+              icon={locks.blendMode ? <LockIcon /> : <UnlockIcon />}
+              size="xs"
+              variant="ghost"
+              onClick={() => toggleLock('blendMode')}
+            />
+          </HStack>
+        </HStack>
         <Select
+          id="blendMode"
+          name="blendMode"
           value={config.blendMode}
           onChange={(e) => handleChange('blendMode', e.target.value)}
           bg="whiteAlpha.200"
@@ -430,9 +558,20 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults }:
 
       <Divider />
 
-      <HStack width="100%" spacing={4}>
-        <Text fontWeight="medium">Base Color</Text>
+      <HStack width="100%" spacing={4} justify="space-between">
+        <HStack>
+          <Text fontWeight="medium">Base Color</Text>
+          <IconButton
+            aria-label={locks.color ? "Unlock setting" : "Lock setting"}
+            icon={locks.color ? <LockIcon /> : <UnlockIcon />}
+            size="xs"
+            variant="ghost"
+            onClick={() => toggleLock('color')}
+          />
+        </HStack>
         <Input
+          id="baseColor"
+          name="baseColor"
           type="color"
           value={config.color}
           onChange={(e) => handleChange('color', e.target.value)}
