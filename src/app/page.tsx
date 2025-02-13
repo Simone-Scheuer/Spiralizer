@@ -25,7 +25,17 @@ const defaultConfig: SpiralConfig = {
   blendMode: 'source-over',
   // Origin position (0.5, 0.5 is center)
   originX: 0.5,
-  originY: 0.5
+  originY: 0.5,
+  // New line effects
+  lineDash: [],        // Solid line by default
+  lineCap: 'round',    // Round line endings
+  lineJoin: 'round',   // Round line corners
+  baseOpacity: 1,      // Full opacity by default
+  // New motion controls
+  reverseDirection: false,  // Spiral outward by default
+  acceleration: 0,         // No acceleration by default
+  oscillate: false,       // No oscillation by default
+  oscillationSpeed: 1     // Default oscillation speed
 }
 
 export default function Home() {

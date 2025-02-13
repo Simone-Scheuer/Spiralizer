@@ -18,6 +18,16 @@ export interface SpiralConfig {
   // Origin position (0-1 represents percentage of canvas size)
   originX: number       // X position of spiral origin (0-1)
   originY: number       // Y position of spiral origin (0-1)
+  // New line effects
+  lineDash: number[]    // Pattern for dashed lines [dash length, gap length]
+  lineCap: CanvasLineCap // Line end style: 'butt', 'round', 'square'
+  lineJoin: CanvasLineJoin // Line corner style: 'round', 'bevel', 'miter'
+  baseOpacity: number   // Base opacity for lines (0-1)
+  // New motion controls
+  reverseDirection: boolean // Whether to spiral inward instead of outward
+  acceleration: number  // Speed change per step (can be negative)
+  oscillate: boolean   // Whether parameters should oscillate
+  oscillationSpeed: number // Speed of parameter oscillation
 }
 
 // Type for tracking which settings are locked

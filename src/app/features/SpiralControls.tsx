@@ -30,7 +30,7 @@ interface SpiralControlsProps {
 }
 
 export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, locks, onLocksChange }: SpiralControlsProps) => {
-  const handleChange = (key: keyof SpiralConfig, value: number | string | boolean) => {
+  const handleChange = (key: keyof SpiralConfig, value: number | string | boolean | number[]) => {
     if (key !== 'isPaused' && !config.isPaused) {
       onChange({ ...config, [key]: value, isPaused: true })
     } else {
@@ -491,6 +491,98 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
 
       <Text fontSize="lg" fontWeight="bold" width="100%">Effects</Text>
 
+      <Box width="100%">
+        <ControlHeader 
+          label="Line Opacity" 
+          value={config.baseOpacity.toFixed(2)}
+          settingKey="baseOpacity"
+        />
+        <Tooltip label={config.baseOpacity}>
+          <Slider
+            value={config.baseOpacity}
+            onChange={(v) => handleChange('baseOpacity', v)}
+            min={0}
+            max={1}
+            step={0.01}
+          >
+            <SliderTrack bg="whiteAlpha.200">
+              <SliderFilledTrack />
+            </SliderTrack>
+            <SliderThumb boxSize={6} />
+          </Slider>
+        </Tooltip>
+      </Box>
+
+      <Box width="100%">
+        <HStack mb={2} justify="space-between">
+          <HStack>
+            <Text fontWeight="medium">Line Style</Text>
+            <IconButton
+              aria-label={locks.lineCap ? "Unlock setting" : "Lock setting"}
+              icon={locks.lineCap ? <LockIcon /> : <UnlockIcon />}
+              size="xs"
+              variant="ghost"
+              onClick={() => toggleLock('lineCap')}
+            />
+          </HStack>
+        </HStack>
+        <Select
+          value={config.lineCap}
+          onChange={(e) => handleChange('lineCap', e.target.value)}
+          bg="whiteAlpha.200"
+        >
+          <option value="butt">Flat</option>
+          <option value="round">Round</option>
+          <option value="square">Square</option>
+        </Select>
+      </Box>
+
+      <Box width="100%">
+        <HStack mb={2} justify="space-between">
+          <HStack>
+            <Text fontWeight="medium">Line Join</Text>
+            <IconButton
+              aria-label={locks.lineJoin ? "Unlock setting" : "Lock setting"}
+              icon={locks.lineJoin ? <LockIcon /> : <UnlockIcon />}
+              size="xs"
+              variant="ghost"
+              onClick={() => toggleLock('lineJoin')}
+            />
+          </HStack>
+        </HStack>
+        <Select
+          value={config.lineJoin}
+          onChange={(e) => handleChange('lineJoin', e.target.value)}
+          bg="whiteAlpha.200"
+        >
+          <option value="round">Round</option>
+          <option value="bevel">Bevel</option>
+          <option value="miter">Miter</option>
+        </Select>
+      </Box>
+
+      <Box width="100%">
+        <ControlHeader 
+          label="Line Dash Length" 
+          value={config.lineDash[0]?.toString() || "0"}
+          settingKey="lineDash"
+        />
+        <Tooltip label={config.lineDash[0] || "0"}>
+          <Slider
+            value={config.lineDash[0] || 0}
+            onChange={(v) => handleChange('lineDash', v === 0 ? [] : [v, v])}
+            min={0}
+            max={50}
+            step={1}
+          >
+            <SliderTrack bg="whiteAlpha.200">
+              <SliderFilledTrack />
+            </SliderTrack>
+            <SliderThumb boxSize={6} />
+          </Slider>
+        </Tooltip>
+      </Box>
+
       <BooleanControl
         label="Fade Lines"
         value={config.fadeOpacity}
@@ -514,6 +606,68 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
             <Slider
               value={config.rainbowSpeed}
               onChange={(v) => handleChange('rainbowSpeed', v)}
+              min={0.1}
+              max={5}
+              step={0.1}
+            >
+              <SliderTrack bg="whiteAlpha.200">
+                <SliderFilledTrack />
+              </SliderTrack>
+              <SliderThumb boxSize={6} />
+            </Slider>
+          </Tooltip>
+        </Box>
+      )}
+
+      <Divider />
+
+      <Text fontSize="lg" fontWeight="bold" width="100%">Motion Controls</Text>
+
+      <BooleanControl
+        label="Reverse Direction"
+        value={config.reverseDirection}
+        settingKey="reverseDirection"
+      />
+
+      <Box width="100%">
+        <ControlHeader 
+          label="Acceleration" 
+          value={config.acceleration.toFixed(3)}
+          settingKey="acceleration"
+        />
+        <Tooltip label={config.acceleration}>
+          <Slider
+            value={config.acceleration}
+            onChange={(v) => handleChange('acceleration', v)}
+            min={-0.1}
+            max={0.1}
+            step={0.001}
+          >
+            <SliderTrack bg="whiteAlpha.200">
+              <SliderFilledTrack />
+            </SliderTrack>
+            <SliderThumb boxSize={6} />
+          </Slider>
+        </Tooltip>
+      </Box>
+
+      <BooleanControl
+        label="Oscillate"
+        value={config.oscillate}
+        settingKey="oscillate"
+      />
+
+      {config.oscillate && (
+        <Box width="100%">
+          <ControlHeader 
+            label="Oscillation Speed" 
+            value={config.oscillationSpeed.toFixed(1)}
+            settingKey="oscillationSpeed"
+          />
+          <Tooltip label={config.oscillationSpeed}>
+            <Slider
+              value={config.oscillationSpeed}
+              onChange={(v) => handleChange('oscillationSpeed', v)}
               min={0.1}
               max={5}
               step={0.1}

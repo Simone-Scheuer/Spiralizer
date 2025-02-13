@@ -64,14 +64,32 @@ export const useSpiralAnimation = (
     // Set global composite operation
     ctx.globalCompositeOperation = config.blendMode as GlobalCompositeOperation
 
+    // Apply line effects
+    ctx.lineCap = config.lineCap
+    ctx.lineJoin = config.lineJoin
+    if (config.lineDash.length > 0) {
+      ctx.setLineDash(config.lineDash)
+    } else {
+      ctx.setLineDash([])
+    }
+
+    // Calculate current speed with acceleration
+    const currentSpeed = config.speed + (stepCountRef.current * config.acceleration)
+
     // Draw multiple lines if configured
     for (let i = 0; i < config.multiLineCount; i++) {
       const angleOffset = (i * config.rotationOffset) * (Math.PI / 180)
-      const angleInRadians = (currentAngleRef.current * Math.PI) / 180 + angleOffset
+      let angleInRadians = (currentAngleRef.current * Math.PI) / 180 + angleOffset
+
+      // Apply oscillation if enabled
+      if (config.oscillate) {
+        const oscillation = Math.sin(stepCountRef.current * config.oscillationSpeed * 0.01) * Math.PI / 4
+        angleInRadians += oscillation
+      }
 
       // Calculate next position with dynamic step length
       const stepMultiplier = 1 + (stepCountRef.current * config.stepMultiplier)
-      const currentStepLength = config.stepLength * stepMultiplier
+      const currentStepLength = config.stepLength * stepMultiplier * (config.reverseDirection ? -1 : 1)
       const spacing = i * config.multiLineSpacing
       
       const nextX = currentPosRef.current.x + 
@@ -79,19 +97,29 @@ export const useSpiralAnimation = (
       const nextY = currentPosRef.current.y + 
         Math.sin(angleInRadians) * (currentStepLength + spacing)
 
+      // Calculate opacity
+      let opacity = config.baseOpacity
+      if (config.fadeOpacity) {
+        opacity *= Math.max(0.1, 1 - stepCountRef.current * 0.001)
+      }
+
       // Draw line
       ctx.beginPath()
       ctx.strokeStyle = getLineColor(i)
+      ctx.globalAlpha = opacity
       ctx.lineWidth = config.lineWidth
       ctx.moveTo(currentPosRef.current.x, currentPosRef.current.y)
       ctx.lineTo(nextX, nextY)
       ctx.stroke()
     }
 
+    // Reset global alpha for next frame
+    ctx.globalAlpha = 1
+
     // Update position and continue the path
     const angleInRadians = currentAngleRef.current * Math.PI / 180
     const stepMultiplier = 1 + (stepCountRef.current * config.stepMultiplier)
-    const currentStepLength = config.stepLength * stepMultiplier
+    const currentStepLength = config.stepLength * stepMultiplier * (config.reverseDirection ? -1 : 1)
     
     currentPosRef.current = {
       x: currentPosRef.current.x + Math.cos(angleInRadians) * currentStepLength,
@@ -111,7 +139,7 @@ export const useSpiralAnimation = (
     if (!config.isPaused) {
       timeoutRef.current = setTimeout(() => {
         animationFrameRef.current = requestAnimationFrame(drawSpiral)
-      }, config.speed)
+      }, currentSpeed)
     }
   }, [
     config.angleChange,
@@ -131,6 +159,14 @@ export const useSpiralAnimation = (
     config.speed,
     config.stepLength,
     config.stepMultiplier,
+    config.lineCap,
+    config.lineJoin,
+    config.lineDash,
+    config.baseOpacity,
+    config.reverseDirection,
+    config.acceleration,
+    config.oscillate,
+    config.oscillationSpeed,
     getLineColor
   ])
 

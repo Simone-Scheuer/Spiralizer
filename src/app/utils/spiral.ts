@@ -55,8 +55,18 @@ export const createRandomConfig = (currentConfig: SpiralConfig, locks: SpiralCon
     rainbowMode: locks.rainbowMode ? currentConfig.rainbowMode : Math.random() > 0.5,
     rainbowSpeed: locks.rainbowSpeed ? currentConfig.rainbowSpeed : randomInRange(0.1, 5, 0.1),
     blendMode: locks.blendMode ? currentConfig.blendMode : BLEND_MODES[Math.floor(Math.random() * BLEND_MODES.length)],
-    originX: locks.originX ? currentConfig.originX : randomInRange(0, 1, 0.01),
-    originY: locks.originY ? currentConfig.originY : randomInRange(0, 1, 0.01),
+    //originX: locks.originX ? currentConfig.originX : randomInRange(0, 1, 0.01),
+    //originY: locks.originY ? currentConfig.originY : randomInRange(0, 1, 0.01),
+    // New line effects
+    lineDash: locks.lineDash ? currentConfig.lineDash : Math.random() > 0.7 ? [randomInRange(1, 20, 1), randomInRange(1, 20, 1)] : [],
+    lineCap: locks.lineCap ? currentConfig.lineCap : ['butt', 'round', 'square'][Math.floor(Math.random() * 3)] as CanvasLineCap,
+    lineJoin: locks.lineJoin ? currentConfig.lineJoin : ['round', 'bevel', 'miter'][Math.floor(Math.random() * 3)] as CanvasLineJoin,
+    baseOpacity: locks.baseOpacity ? currentConfig.baseOpacity : randomInRange(0.1, 1, 0.01),
+    // New motion controls
+    reverseDirection: locks.reverseDirection ? currentConfig.reverseDirection : Math.random() > 0.5,
+    acceleration: locks.acceleration ? currentConfig.acceleration : randomInRange(-0.05, 0.05, 0.001),
+    oscillate: locks.oscillate ? currentConfig.oscillate : Math.random() > 0.7, // Less frequent to keep some patterns stable
+    oscillationSpeed: locks.oscillationSpeed ? currentConfig.oscillationSpeed : randomInRange(0.1, 3, 0.1),
     isPaused: true // Always start paused with new random settings
   }
   
