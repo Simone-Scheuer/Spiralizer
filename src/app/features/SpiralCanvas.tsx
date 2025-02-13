@@ -48,9 +48,13 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
 
       try {
         if (!isFullscreen && containerRef.current) {
-          await containerRef.current.requestFullscreen()
+          await containerRef.current.requestFullscreen().catch(error => {
+            console.error('Error entering fullscreen:', error)
+          })
         } else if (document.fullscreenElement) {
-          await document.exitFullscreen()
+          await document.exitFullscreen().catch(error => {
+            console.error('Error exiting fullscreen:', error)
+          })
         }
       } catch (error) {
         console.error('Error toggling fullscreen:', error)

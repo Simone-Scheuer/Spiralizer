@@ -69,19 +69,24 @@ class SpiralSoundGenerator {
   private async createReverb() {
     if (!this.audioContext || !this.reverbNode) return
 
-    // Create impulse response for reverb
-    const length = this.audioContext.sampleRate * 2.5
-    const impulse = this.audioContext.createBuffer(2, length, this.audioContext.sampleRate)
-    
-    for (let channel = 0; channel < 2; channel++) {
-      const channelData = impulse.getChannelData(channel)
-      for (let i = 0; i < length; i++) {
-        const decay = Math.exp(-i / (this.audioContext.sampleRate * 0.5))
-        channelData[i] = (Math.random() * 2 - 1) * decay
-      }
+    try {
+      // Create impulse response for reverb
+      const audioContext = this.audioContext // Store reference to avoid null checks
+      const length = audioContext.sampleRate * 2.5
+      const impulse = audioContext.createBuffer(2, length, audioContext.sampleRate)
+      
+      await Promise.all([0, 1].map(async channel => {
+        const channelData = impulse.getChannelData(channel)
+        for (let i = 0; i < length; i++) {
+          const decay = Math.exp(-i / (audioContext.sampleRate * 0.5))
+          channelData[i] = (Math.random() * 2 - 1) * decay
+        }
+      }))
+      
+      this.reverbNode.buffer = impulse
+    } catch (error) {
+      console.error('Error creating reverb:', error)
     }
-    
-    this.reverbNode.buffer = impulse
   }
 
   private setupOscillators() {

@@ -19,7 +19,7 @@ import {
 import { SpiralConfig, SpiralConfigLocks } from '../models/types'
 import { BLEND_MODES, createRandomConfig } from '../utils/spiral'
 import { LockIcon, UnlockIcon, InfoIcon } from '@chakra-ui/icons'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 
 interface SpiralControlsProps {
   config: SpiralConfig
@@ -50,12 +50,12 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
     onChange(newConfig)
   }
 
-  const handleRandomize = () => {
+  const handleRandomize = useCallback(() => {
     const newConfig = createRandomConfig(config, locks)
     
     // Save to localStorage (except isPaused state)
     try {
-      const { isPaused, ...configToSave } = newConfig
+      const { isPaused: _, ...configToSave } = newConfig
       localStorage.setItem('spiralConfig', JSON.stringify(configToSave))
     } catch (e) {
       console.error('Error saving config to localStorage:', e)
@@ -67,7 +67,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
     }
     
     onChange(newConfig)
-  }
+  }, [config, locks, onChange])
 
   // Handle screensaver mode
   useEffect(() => {
