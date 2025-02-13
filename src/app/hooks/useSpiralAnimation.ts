@@ -260,7 +260,7 @@ export const useSpiralAnimation = (
         y: canvas.height * config.originY
       }
     }
-  }, [config.originX, config.originY, canvasRef])
+  }, [config.originX, config.originY])
 
   // Handle canvas resize
   useEffect(() => {
@@ -286,7 +286,7 @@ export const useSpiralAnimation = (
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [drawSpiral, config.isPaused, config.originX, config.originY, canvasRef])
+  }, [drawSpiral, config.isPaused, config.originX, config.originY])
 
   // Cleanup on unmount
   useEffect(() => {

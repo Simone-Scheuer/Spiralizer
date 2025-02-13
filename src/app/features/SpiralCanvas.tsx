@@ -1,5 +1,5 @@
-import { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react'
-import { Box, IconButton, HStack, Tooltip } from '@chakra-ui/react'
+import { forwardRef, useImperativeHandle, useRef, useEffect, useState, useCallback } from 'react'
+import { Box, IconButton, HStack } from '@chakra-ui/react'
 import { useSpiralAnimation } from '../hooks/useSpiralAnimation'
 import { SpiralConfig, SpiralConfigLocks } from '../models/types'
 import { createRandomConfig } from '../utils/spiral'
@@ -34,6 +34,28 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
       startAnimation,
       resetCanvas
     }))
+
+    const handleZoomIn = useCallback(() => {
+      setZoom(prev => Math.min(prev * 1.2, 5)) // Max zoom 5x
+    }, [])
+
+    const handleZoomOut = useCallback(() => {
+      setZoom(prev => Math.max(prev / 1.2, 0.2)) // Min zoom 0.2x
+    }, [])
+
+    const toggleFullscreen = useCallback(async () => {
+      if (typeof document === 'undefined') return; // Skip on server-side
+
+      try {
+        if (!isFullscreen && containerRef.current) {
+          await containerRef.current.requestFullscreen()
+        } else if (document.fullscreenElement) {
+          await document.exitFullscreen()
+        }
+      } catch (error) {
+        console.error('Error toggling fullscreen:', error)
+      }
+    }, [isFullscreen])
 
     // Handle keyboard shortcuts
     useEffect(() => {
@@ -89,7 +111,7 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
 
       window.addEventListener('keydown', handleKeyPress)
       return () => window.removeEventListener('keydown', handleKeyPress)
-    }, [config, onChange, onReset, onResetToDefaults, locks])
+    }, [config, onChange, onReset, onResetToDefaults, locks, toggleFullscreen, handleZoomIn, handleZoomOut, setZoom])
 
     // Handle fullscreen changes
     useEffect(() => {
@@ -102,28 +124,6 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
       document.addEventListener('fullscreenchange', handleFullscreenChange)
       return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
     }, [])
-
-    const toggleFullscreen = async () => {
-      if (typeof document === 'undefined') return; // Skip on server-side
-
-      try {
-        if (!isFullscreen) {
-          await containerRef.current?.requestFullscreen()
-        } else {
-          await document.exitFullscreen()
-        }
-      } catch (error) {
-        console.error('Error toggling fullscreen:', error)
-      }
-    }
-
-    const handleZoomIn = () => {
-      setZoom(prev => Math.min(prev * 1.2, 5)) // Max zoom 5x
-    }
-
-    const handleZoomOut = () => {
-      setZoom(prev => Math.max(prev / 1.2, 0.2)) // Min zoom 0.2x
-    }
 
     return (
       <Box 

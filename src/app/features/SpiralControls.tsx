@@ -99,7 +99,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
         screensaverTimerRef.current = null
       }
     }
-  }, [config.screensaverMode, config.isPaused])
+  }, [config.screensaverMode, config.isPaused, config, locks, onChange, onReset])
 
   // Handle keyboard shortcuts
   useEffect(() => {
