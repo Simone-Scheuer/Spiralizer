@@ -1,7 +1,7 @@
 'use client'
 
 import { Box, Container, Grid, Heading, Text, VStack } from '@chakra-ui/react'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { SpiralCanvas, SpiralCanvasRef } from './features/SpiralCanvas'
 import { SpiralControls } from './features/SpiralControls'
 import { SpiralConfig, SpiralConfigLocks } from './models/types'
@@ -35,7 +35,12 @@ const defaultConfig: SpiralConfig = {
   reverseDirection: false,  // Spiral outward by default
   acceleration: 0,         // No acceleration by default
   oscillate: false,       // No oscillation by default
-  oscillationSpeed: 1     // Default oscillation speed
+  oscillationSpeed: 1,     // Default oscillation speed
+  // Audio settings
+  audioEnabled: true,     // Audio on by default
+  audioVolume: 0.5,        // Medium volume by default
+  // Screensaver mode
+  screensaverMode: false  // Off by default
 }
 
 export default function Home() {
@@ -45,8 +50,17 @@ export default function Home() {
     const initialLocks = {} as SpiralConfigLocks
     // Get all config keys except isPaused
     const configKeys = Object.keys(defaultConfig).filter(key => key !== 'isPaused')
+    configKeys.forEach(key => {
+      initialLocks[key as keyof SpiralConfigLocks] = false
+    })
+    return initialLocks
+  })
+
+  // Load locks from localStorage on client-side only
+  useEffect(() => {
+    // Get all config keys except isPaused
+    const configKeys = Object.keys(defaultConfig).filter(key => key !== 'isPaused')
     
-    // Try to load locks from localStorage
     try {
       const savedLocks = localStorage.getItem('spiralLocks')
       if (savedLocks) {
@@ -57,18 +71,26 @@ export default function Home() {
             parsed[key] = false
           }
         })
-        return parsed
+        setLocks(parsed)
       }
     } catch (e) {
       console.error('Error loading locks from localStorage:', e)
     }
+  }, []) // Empty dependency array means this runs once on mount
 
-    // If no saved locks or error, initialize all to unlocked
-    configKeys.forEach(key => {
-      initialLocks[key as keyof SpiralConfigLocks] = false
-    })
-    return initialLocks
-  })
+  // Load saved config from localStorage
+  useEffect(() => {
+    try {
+      const savedConfig = localStorage.getItem('spiralConfig')
+      if (savedConfig) {
+        const parsed = JSON.parse(savedConfig)
+        setConfig(prev => ({ ...prev, ...parsed, isPaused: true }))
+      }
+    } catch (e) {
+      console.error('Error loading config from localStorage:', e)
+    }
+  }, [])
+
   const canvasRef = useRef<SpiralCanvasRef>(null)
 
   const handleReset = () => {
@@ -90,7 +112,7 @@ export default function Home() {
   }
 
   return (
-    <Box minH="100vh" bg="gray.900" color="white">
+    <Box minH="100vh" bg='#1A202C' color="white">
       <Container maxW="container.2xl" py={10}>
         <VStack spacing={6} mb={10}>
           <Heading size="2xl" bgGradient="linear(to-r, cyan.400, purple.500)" bgClip="text">

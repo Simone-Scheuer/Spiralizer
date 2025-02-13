@@ -67,7 +67,10 @@ export const createRandomConfig = (currentConfig: SpiralConfig, locks: SpiralCon
     acceleration: locks.acceleration ? currentConfig.acceleration : randomInRange(-0.05, 0.05, 0.001),
     oscillate: locks.oscillate ? currentConfig.oscillate : Math.random() > 0.7, // Less frequent to keep some patterns stable
     oscillationSpeed: locks.oscillationSpeed ? currentConfig.oscillationSpeed : randomInRange(0.1, 3, 0.1),
-    isPaused: true // Always start paused with new random settings
+    isPaused: true, // Always start paused with new random settings
+    // Preserve audio settings
+    audioEnabled: currentConfig.audioEnabled,
+    audioVolume: currentConfig.audioVolume
   }
   
   // Log what's being randomized vs locked for debugging

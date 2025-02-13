@@ -28,7 +28,7 @@ export default function RootLayout({
       <head>
         <ColorMode />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} style={{ backgroundColor: '#1A202C' }}>
         <Providers>{children}</Providers>
       </body>
     </html>

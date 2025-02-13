@@ -1,9 +1,11 @@
 import { RefObject, useCallback, useRef, useEffect } from 'react'
 import { SpiralConfig } from '../models/types'
+import { shepardTone } from '../utils/audio'
 
 export const useSpiralAnimation = (
   canvasRef: RefObject<HTMLCanvasElement | null>,
-  config: SpiralConfig
+  config: SpiralConfig,
+  canvasSize: number = 1000 // Default size if not specified
 ) => {
   const animationFrameRef = useRef<number | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -12,6 +14,27 @@ export const useSpiralAnimation = (
   const currentPosRef = useRef({ x: 0, y: 0 })
   const isInitializedRef = useRef<boolean>(false)
   const hueRef = useRef<number>(0)
+
+  // Handle audio state
+  useEffect(() => {
+    if (config.audioEnabled && !config.isPaused) {
+      shepardTone?.start()
+      shepardTone?.setVolume(config.audioVolume)
+    } else {
+      shepardTone?.stop()
+    }
+
+    return () => {
+      shepardTone?.stop()
+    }
+  }, [config.audioEnabled, config.audioVolume, config.isPaused])
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      shepardTone?.cleanup()
+    }
+  }, [])
 
   const cleanup = useCallback(() => {
     if (animationFrameRef.current !== null) {
@@ -44,8 +67,8 @@ export const useSpiralAnimation = (
     // Initialize canvas size if needed
     if (!isInitializedRef.current) {
       // Set canvas dimensions
-      canvas.width = canvas.clientWidth
-      canvas.height = canvas.clientHeight
+      canvas.width = canvasSize
+      canvas.height = canvasSize
       
       // Set initial position to origin
       currentPosRef.current = {
@@ -75,6 +98,23 @@ export const useSpiralAnimation = (
 
     // Calculate current speed with acceleration
     const currentSpeed = config.speed + (stepCountRef.current * config.acceleration)
+
+    // Update Shepard tone if enabled
+    if (config.audioEnabled) {
+      const normalizedProgress = (currentAngleRef.current % 360) / 360
+      const normalizedSpeed = 1 - (currentSpeed / 300) // Normalize speed to 0-1 range
+      shepardTone?.updateTone({
+        progress: normalizedProgress,
+        speed: normalizedSpeed,
+        stepLength: config.stepLength,
+        angleChange: config.angleChange,
+        multiLineCount: config.multiLineCount,
+        stepMultiplier: config.stepMultiplier,
+        oscillate: config.oscillate,
+        oscillationSpeed: config.oscillationSpeed,
+        reverseDirection: config.reverseDirection
+      })
+    }
 
     // Draw multiple lines if configured
     for (let i = 0; i < config.multiLineCount; i++) {
@@ -167,7 +207,9 @@ export const useSpiralAnimation = (
     config.acceleration,
     config.oscillate,
     config.oscillationSpeed,
-    getLineColor
+    config.audioEnabled,
+    getLineColor,
+    canvasSize
   ])
 
   const resetCanvas = useCallback(() => {

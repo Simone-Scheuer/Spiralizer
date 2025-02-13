@@ -28,6 +28,11 @@ export interface SpiralConfig {
   acceleration: number  // Speed change per step (can be negative)
   oscillate: boolean   // Whether parameters should oscillate
   oscillationSpeed: number // Speed of parameter oscillation
+  // Audio settings
+  audioEnabled: boolean // Whether sound is enabled
+  audioVolume: number  // Sound volume (0-1)
+  // Screensaver mode
+  screensaverMode: boolean // Whether to automatically cycle through patterns
 }
 
 // Type for tracking which settings are locked

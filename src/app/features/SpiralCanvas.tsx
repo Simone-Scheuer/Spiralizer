@@ -1,8 +1,12 @@
-import { forwardRef, useImperativeHandle, useRef, useEffect } from 'react'
-import { Box } from '@chakra-ui/react'
+import { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react'
+import { Box, IconButton, HStack, Tooltip } from '@chakra-ui/react'
 import { useSpiralAnimation } from '../hooks/useSpiralAnimation'
 import { SpiralConfig, SpiralConfigLocks } from '../models/types'
 import { createRandomConfig } from '../utils/spiral'
+import { AddIcon, MinusIcon, SmallCloseIcon, ViewIcon, ViewOffIcon } from '@chakra-ui/icons'
+
+// Fixed canvas size that's large enough to prevent pattern cutoff
+const CANVAS_SIZE = 3000
 
 interface SpiralCanvasProps {
   config: SpiralConfig
@@ -20,7 +24,11 @@ export interface SpiralCanvasRef {
 export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
   ({ config, onChange, onReset, onResetToDefaults, locks }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
-    const { startAnimation, resetCanvas } = useSpiralAnimation(canvasRef, config)
+    const containerRef = useRef<HTMLDivElement>(null)
+    const viewportRef = useRef<HTMLDivElement>(null)
+    const [isFullscreen, setIsFullscreen] = useState(false)
+    const [zoom, setZoom] = useState(1)
+    const { startAnimation, resetCanvas } = useSpiralAnimation(canvasRef, config, CANVAS_SIZE)
 
     useImperativeHandle(ref, () => ({
       startAnimation,
@@ -54,6 +62,28 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
             e.preventDefault()
             onResetToDefaults()
             break
+          case 'KeyF':
+            e.preventDefault()
+            toggleFullscreen()
+            break
+          case 'Equal': // Plus key
+            if (e.metaKey || e.ctrlKey) {
+              e.preventDefault()
+              handleZoomIn()
+            }
+            break
+          case 'Minus':
+            if (e.metaKey || e.ctrlKey) {
+              e.preventDefault()
+              handleZoomOut()
+            }
+            break
+          case 'Digit0':
+            if (e.metaKey || e.ctrlKey) {
+              e.preventDefault()
+              setZoom(1)
+            }
+            break
         }
       }
 
@@ -61,12 +91,125 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
       return () => window.removeEventListener('keydown', handleKeyPress)
     }, [config, onChange, onReset, onResetToDefaults, locks])
 
+    // Handle fullscreen changes
+    useEffect(() => {
+      if (typeof document === 'undefined') return; // Skip on server-side
+
+      const handleFullscreenChange = () => {
+        setIsFullscreen(document.fullscreenElement !== null)
+      }
+
+      document.addEventListener('fullscreenchange', handleFullscreenChange)
+      return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }, [])
+
+    const toggleFullscreen = async () => {
+      if (typeof document === 'undefined') return; // Skip on server-side
+
+      try {
+        if (!isFullscreen) {
+          await containerRef.current?.requestFullscreen()
+        } else {
+          await document.exitFullscreen()
+        }
+      } catch (error) {
+        console.error('Error toggling fullscreen:', error)
+      }
+    }
+
+    const handleZoomIn = () => {
+      setZoom(prev => Math.min(prev * 1.2, 5)) // Max zoom 5x
+    }
+
+    const handleZoomOut = () => {
+      setZoom(prev => Math.max(prev / 1.2, 0.2)) // Min zoom 0.2x
+    }
+
     return (
-      <Box width="100%" height="100%" bg="black" borderRadius="md" overflow="hidden" position="relative">
-        <canvas
-          ref={canvasRef}
-          style={{ width: '100%', height: '100%' }}
-        />
+      <Box 
+        ref={containerRef}
+        width="100%" 
+        height="100%" 
+        bg="black" 
+        borderRadius={isFullscreen ? "0" : "md"} 
+        overflow="hidden" 
+        position="relative"
+      >
+        <Box
+          ref={viewportRef}
+          width="100%"
+          height="100%"
+          overflow="hidden"
+          position="relative"
+        >
+          <Box
+            position="absolute"
+            top="50%"
+            left="50%"
+            transform={`translate(-50%, -50%) scale(${zoom})`}
+            transformOrigin="center center"
+            transition="transform 0.2s ease-out"
+            width={`${CANVAS_SIZE}px`}
+            height={`${CANVAS_SIZE}px`}
+          >
+            <canvas
+              ref={canvasRef}
+              width={CANVAS_SIZE}
+              height={CANVAS_SIZE}
+              style={{ 
+                width: '100%', 
+                height: '100%',
+              }}
+            />
+          </Box>
+        </Box>
+        <HStack 
+          position="absolute" 
+          top={4} 
+          right={4} 
+          spacing={2}
+          bg="whiteAlpha.200"
+          backdropFilter="blur(10px)"
+          borderRadius="md"
+          p={2}
+        >
+          <IconButton
+            aria-label="Zoom out"
+            icon={<MinusIcon />}
+            onClick={handleZoomOut}
+            size="sm"
+            variant="ghost"
+            colorScheme="whiteAlpha"
+            isDisabled={zoom <= 0.2}
+          />
+          <IconButton
+            aria-label="Reset zoom"
+            icon={<SmallCloseIcon />}
+            onClick={() => setZoom(1)}
+            size="sm"
+            variant="ghost"
+            colorScheme="whiteAlpha"
+          >
+            {Math.round(zoom * 100)}%
+          </IconButton>
+          <IconButton
+            aria-label="Zoom in"
+            icon={<AddIcon />}
+            onClick={handleZoomIn}
+            size="sm"
+            variant="ghost"
+            colorScheme="whiteAlpha"
+            isDisabled={zoom >= 5}
+          />
+          <IconButton
+            aria-label="Toggle fullscreen"
+            icon={isFullscreen ? <ViewOffIcon /> : <ViewIcon />}
+            onClick={toggleFullscreen}
+            size="sm"
+            variant="ghost"
+            colorScheme="whiteAlpha"
+          />
+        </HStack>
       </Box>
     )
   }

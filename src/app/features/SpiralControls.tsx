@@ -18,7 +18,8 @@ import {
 } from '@chakra-ui/react'
 import { SpiralConfig, SpiralConfigLocks } from '../models/types'
 import { BLEND_MODES, createRandomConfig } from '../utils/spiral'
-import { LockIcon, UnlockIcon } from '@chakra-ui/icons'
+import { LockIcon, UnlockIcon, InfoIcon } from '@chakra-ui/icons'
+import { useEffect, useRef } from 'react'
 
 interface SpiralControlsProps {
   config: SpiralConfig
@@ -30,23 +31,119 @@ interface SpiralControlsProps {
 }
 
 export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, locks, onLocksChange }: SpiralControlsProps) => {
+  const screensaverTimerRef = useRef<NodeJS.Timeout | null>(null)
+
   const handleChange = (key: keyof SpiralConfig, value: number | string | boolean | number[]) => {
+    const newConfig = { ...config, [key]: value }
     if (key !== 'isPaused' && !config.isPaused) {
-      onChange({ ...config, [key]: value, isPaused: true })
-    } else {
-      onChange({ ...config, [key]: value })
+      newConfig.isPaused = true
     }
+    
+    // Save to localStorage (except isPaused state)
+    try {
+      const { isPaused, ...configToSave } = newConfig
+      localStorage.setItem('spiralConfig', JSON.stringify(configToSave))
+    } catch (e) {
+      console.error('Error saving config to localStorage:', e)
+    }
+    
+    onChange(newConfig)
   }
+
+  const handleRandomize = () => {
+    const newConfig = createRandomConfig(config, locks)
+    
+    // Save to localStorage (except isPaused state)
+    try {
+      const { isPaused, ...configToSave } = newConfig
+      localStorage.setItem('spiralConfig', JSON.stringify(configToSave))
+    } catch (e) {
+      console.error('Error saving config to localStorage:', e)
+    }
+    
+    // If in screensaver mode, ensure animation continues
+    if (config.screensaverMode) {
+      newConfig.isPaused = false
+    }
+    
+    onChange(newConfig)
+  }
+
+  // Handle screensaver mode
+  useEffect(() => {
+    if (config.screensaverMode && !config.isPaused) {
+      // Start the timer
+      const startNewPattern = () => {
+        // First reset the canvas
+        onReset()
+        
+        // Short delay to ensure canvas is cleared
+        setTimeout(() => {
+          const newConfig = createRandomConfig(config, locks)
+          newConfig.isPaused = false // Keep animation running
+          onChange(newConfig)
+        }, 100)
+
+        // Schedule next pattern
+        screensaverTimerRef.current = setTimeout(startNewPattern, 5000)
+      }
+      
+      // Start first pattern after delay
+      screensaverTimerRef.current = setTimeout(startNewPattern, 5000)
+    }
+
+    return () => {
+      // Cleanup timer
+      if (screensaverTimerRef.current) {
+        clearTimeout(screensaverTimerRef.current)
+        screensaverTimerRef.current = null
+      }
+    }
+  }, [config.screensaverMode, config.isPaused])
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only handle if not typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return
+      }
+      
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault() // Prevent page scroll
+          onChange({ ...config, isPaused: !config.isPaused })
+          break
+        case 'KeyR':
+          e.preventDefault()
+          handleRandomize()
+          break
+        case 'KeyU':
+          e.preventDefault()
+          onReset()
+          break
+        case 'KeyD':
+          e.preventDefault()
+          onResetToDefaults()
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [config, onChange, onReset, onResetToDefaults, handleRandomize])
 
   const toggleLock = (key: keyof SpiralConfigLocks) => {
     const newLocks = {
       ...locks,
       [key]: !locks[key]
     }
-    try {
-      localStorage.setItem('spiralLocks', JSON.stringify(newLocks))
-    } catch (e) {
-      console.error('Error saving locks to localStorage:', e)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('spiralLocks', JSON.stringify(newLocks))
+      } catch (e) {
+        console.error('Error saving locks to localStorage:', e)
+      }
     }
     onLocksChange(newLocks)
   }
@@ -58,10 +155,12 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
         allUnlocked[key as keyof SpiralConfigLocks] = false
       }
     })
-    try {
-      localStorage.setItem('spiralLocks', JSON.stringify(allUnlocked))
-    } catch (e) {
-      console.error('Error saving locks to localStorage:', e)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('spiralLocks', JSON.stringify(allUnlocked))
+      } catch (e) {
+        console.error('Error saving locks to localStorage:', e)
+      }
     }
     onLocksChange(allUnlocked)
   }
@@ -73,23 +172,20 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
         allLocked[key as keyof SpiralConfigLocks] = true
       }
     })
-    try {
-      localStorage.setItem('spiralLocks', JSON.stringify(allLocked))
-    } catch (e) {
-      console.error('Error saving locks to localStorage:', e)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('spiralLocks', JSON.stringify(allLocked))
+      } catch (e) {
+        console.error('Error saving locks to localStorage:', e)
+      }
     }
     onLocksChange(allLocked)
   }
 
-  const handleRandomize = () => {
-    const newConfig = createRandomConfig(config, locks)
-    onChange(newConfig)
-  }
-
   // Helper component for control headers with lock button
-  const ControlHeader = ({ label, value, settingKey }: { label: string, value: string, settingKey: keyof SpiralConfigLocks }) => (
+  const ControlHeader = ({ label, value, settingKey, tooltip }: { label: string, value: string, settingKey: keyof SpiralConfigLocks, tooltip: string }) => (
     <HStack mb={2} justify="space-between">
-      <HStack>
+      <HStack spacing={2}>
         <Text fontWeight="medium">{label}</Text>
         <IconButton
           aria-label={locks[settingKey] ? "Unlock setting" : "Lock setting"}
@@ -98,15 +194,18 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           variant="ghost"
           onClick={() => toggleLock(settingKey)}
         />
+        <Tooltip label={tooltip} placement="top">
+          <InfoIcon boxSize={3} color="whiteAlpha.600" />
+        </Tooltip>
       </HStack>
       <Text fontSize="sm" color="whiteAlpha.700">{value}</Text>
     </HStack>
   )
 
   // Helper component for boolean controls with lock button
-  const BooleanControl = ({ label, value, settingKey }: { label: string, value: boolean, settingKey: keyof SpiralConfigLocks }) => (
+  const BooleanControl = ({ label, value, settingKey, tooltip }: { label: string, value: boolean, settingKey: keyof SpiralConfigLocks, tooltip: string }) => (
     <HStack width="100%" justify="space-between">
-      <HStack>
+      <HStack spacing={2}>
         <Text fontWeight="medium">{label}</Text>
         <IconButton
           aria-label={locks[settingKey] ? "Unlock setting" : "Lock setting"}
@@ -115,6 +214,9 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           variant="ghost"
           onClick={() => toggleLock(settingKey)}
         />
+        <Tooltip label={tooltip} placement="top">
+          <InfoIcon boxSize={3} color="whiteAlpha.600" />
+        </Tooltip>
       </HStack>
       <Switch
         id={`switch-${settingKey}`}
@@ -176,7 +278,9 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           colorScheme="orange"
           size="md"
           flex={1}
-          variant="outline"
+          variant="solid"
+          bg="orange.600"
+          _hover={{ bg: 'orange.500' }}
         >
           Reset All Settings
         </Button>
@@ -185,7 +289,9 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           colorScheme="purple"
           size="md"
           flex={1}
-          variant="outline"
+          variant="solid"
+          bg="purple.600"
+          _hover={{ bg: 'purple.500' }}
         >
           Randomize Settings
         </Button>
@@ -195,10 +301,11 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
         <Button
           onClick={unlockAll}
           colorScheme="blue"
-          backgroundColor="white.200"
           size="md"
           flex={1}
-          variant="outline"
+          variant="solid"
+          bg="blue.600"
+          _hover={{ bg: 'blue.500' }}
         >
           🔓 Unlock All
         </Button>
@@ -207,10 +314,33 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           colorScheme="blue"
           size="md"
           flex={1}
-          variant="outline"
+          variant="solid"
+          bg="blue.600"
+          _hover={{ bg: 'blue.500' }}
         >
           🔒 Lock All
         </Button>
+      </HStack>
+
+      <HStack width="100%" spacing={4} justify="center" py={2}>
+        <Tooltip label="Toggle sound generation based on spiral parameters" placement="top">
+          <HStack spacing={3}>
+            <Text fontWeight="medium">🔊 Sound</Text>
+            <Switch
+              isChecked={config.audioEnabled}
+              onChange={(e) => handleChange('audioEnabled', e.target.checked)}
+            />
+          </HStack>
+        </Tooltip>
+        <Tooltip label="Automatically cycle through random patterns every 5 seconds" placement="top">
+          <HStack spacing={3}>
+            <Text fontWeight="medium">🎬 Screensaver</Text>
+            <Switch
+              isChecked={config.screensaverMode}
+              onChange={(e) => handleChange('screensaverMode', e.target.checked)}
+            />
+          </HStack>
+        </Tooltip>
       </HStack>
 
       <Divider />
@@ -222,6 +352,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Step Length" 
           value={config.stepLength.toFixed(1)} 
           settingKey="stepLength"
+          tooltip="Controls the distance between each point in the spiral"
         />
         <Tooltip label={config.stepLength}>
           <Slider
@@ -247,6 +378,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Angle Change (degrees)" 
           value={`${config.angleChange.toFixed(1)}°`}
           settingKey="angleChange"
+          tooltip="Controls the angle between each point in the spiral"
         />
         <Tooltip label={config.angleChange}>
           <Slider
@@ -272,6 +404,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Angle Increment (per rotation)" 
           value={`${config.angleIncrement.toFixed(3)}°`}
           settingKey="angleIncrement"
+          tooltip="Gradually changes the angle as the spiral grows"
         />
         <Tooltip label={config.angleIncrement}>
           <Slider
@@ -297,6 +430,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Animation Speed" 
           value={`${config.speed}ms`}
           settingKey="speed"
+          tooltip="Controls how fast the spiral is drawn (lower = faster)"
         />
         <Tooltip label={`${config.speed}ms`}>
           <Slider
@@ -322,6 +456,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Line Width" 
           value={`${config.lineWidth.toFixed(1)}px`}
           settingKey="lineWidth"
+          tooltip="Controls the thickness of the spiral line"
         />
         <Tooltip label={config.lineWidth}>
           <Slider
@@ -351,6 +486,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Origin X Position" 
           value={`${(config.originX * 100).toFixed(1)}%`}
           settingKey="originX"
+          tooltip="Controls the horizontal starting position of the spiral"
         />
         <Tooltip label={`${(config.originX * 100).toFixed(1)}%`}>
           <Slider
@@ -376,6 +512,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Origin Y Position" 
           value={`${(config.originY * 100).toFixed(1)}%`}
           settingKey="originY"
+          tooltip="Controls the vertical starting position of the spiral"
         />
         <Tooltip label={`${(config.originY * 100).toFixed(1)}%`}>
           <Slider
@@ -401,6 +538,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Multiple Lines" 
           value={config.multiLineCount.toString()}
           settingKey="multiLineCount"
+          tooltip="Number of parallel spirals to draw"
         />
         <Tooltip label={config.multiLineCount}>
           <Slider
@@ -426,6 +564,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Line Spacing" 
           value={config.multiLineSpacing.toString()}
           settingKey="multiLineSpacing"
+          tooltip="Distance between parallel spiral lines"
         />
         <Tooltip label={config.multiLineSpacing}>
           <Slider
@@ -448,6 +587,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Step Growth" 
           value={config.stepMultiplier.toFixed(3)}
           settingKey="stepMultiplier"
+          tooltip="How much the step length grows as the spiral expands"
         />
         <Tooltip label={config.stepMultiplier}>
           <Slider
@@ -470,6 +610,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Rotation Offset" 
           value={`${config.rotationOffset}°`}
           settingKey="rotationOffset"
+          tooltip="Initial rotation angle of the spiral"
         />
         <Tooltip label={config.rotationOffset}>
           <Slider
@@ -496,6 +637,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Line Opacity" 
           value={config.baseOpacity.toFixed(2)}
           settingKey="baseOpacity"
+          tooltip="Controls the transparency of the spiral lines"
         />
         <Tooltip label={config.baseOpacity}>
           <Slider
@@ -515,7 +657,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
 
       <Box width="100%">
         <HStack mb={2} justify="space-between">
-          <HStack>
+          <HStack spacing={2}>
             <Text fontWeight="medium">Line Style</Text>
             <IconButton
               aria-label={locks.lineCap ? "Unlock setting" : "Lock setting"}
@@ -524,6 +666,9 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
               variant="ghost"
               onClick={() => toggleLock('lineCap')}
             />
+            <Tooltip label="Choose how the ends of lines are drawn" placement="top">
+              <InfoIcon boxSize={3} color="whiteAlpha.600" />
+            </Tooltip>
           </HStack>
         </HStack>
         <Select
@@ -539,7 +684,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
 
       <Box width="100%">
         <HStack mb={2} justify="space-between">
-          <HStack>
+          <HStack spacing={2}>
             <Text fontWeight="medium">Line Join</Text>
             <IconButton
               aria-label={locks.lineJoin ? "Unlock setting" : "Lock setting"}
@@ -548,6 +693,9 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
               variant="ghost"
               onClick={() => toggleLock('lineJoin')}
             />
+            <Tooltip label="Choose how line segments are joined together" placement="top">
+              <InfoIcon boxSize={3} color="whiteAlpha.600" />
+            </Tooltip>
           </HStack>
         </HStack>
         <Select
@@ -566,6 +714,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Line Dash Length" 
           value={config.lineDash[0]?.toString() || "0"}
           settingKey="lineDash"
+          tooltip="Creates a dashed line pattern (0 for solid line)"
         />
         <Tooltip label={config.lineDash[0] || "0"}>
           <Slider
@@ -587,12 +736,14 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
         label="Fade Lines"
         value={config.fadeOpacity}
         settingKey="fadeOpacity"
+        tooltip="Gradually fade out the spiral lines as they are drawn"
       />
 
       <BooleanControl
         label="Rainbow Mode"
         value={config.rainbowMode}
         settingKey="rainbowMode"
+        tooltip="Cycle through colors as the spiral is drawn"
       />
 
       {config.rainbowMode && (
@@ -601,6 +752,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
             label="Rainbow Speed" 
             value={`${config.rainbowSpeed.toFixed(1)}`}
             settingKey="rainbowSpeed"
+            tooltip="Controls how quickly the colors change in rainbow mode"
           />
           <Tooltip label={config.rainbowSpeed}>
             <Slider
@@ -627,6 +779,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
         label="Reverse Direction"
         value={config.reverseDirection}
         settingKey="reverseDirection"
+        tooltip="Draw the spiral inward instead of outward"
       />
 
       <Box width="100%">
@@ -634,6 +787,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           label="Acceleration" 
           value={config.acceleration.toFixed(3)}
           settingKey="acceleration"
+          tooltip="Gradually changes the animation speed over time"
         />
         <Tooltip label={config.acceleration}>
           <Slider
@@ -655,6 +809,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
         label="Oscillate"
         value={config.oscillate}
         settingKey="oscillate"
+        tooltip="Make the spiral parameters vary over time"
       />
 
       {config.oscillate && (
@@ -663,6 +818,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
             label="Oscillation Speed" 
             value={config.oscillationSpeed.toFixed(1)}
             settingKey="oscillationSpeed"
+            tooltip="Controls how quickly the spiral parameters oscillate"
           />
           <Tooltip label={config.oscillationSpeed}>
             <Slider
@@ -683,7 +839,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
 
       <Box width="100%">
         <HStack mb={2} justify="space-between">
-          <HStack>
+          <HStack spacing={2}>
             <Text fontWeight="medium">Blend Mode</Text>
             <IconButton
               aria-label={locks.blendMode ? "Unlock setting" : "Lock setting"}
@@ -692,6 +848,9 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
               variant="ghost"
               onClick={() => toggleLock('blendMode')}
             />
+            <Tooltip label="How new lines blend with existing ones" placement="top">
+              <InfoIcon boxSize={3} color="whiteAlpha.600" />
+            </Tooltip>
           </HStack>
         </HStack>
         <Select
@@ -712,7 +871,7 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
       <Divider />
 
       <HStack width="100%" spacing={4} justify="space-between">
-        <HStack>
+        <HStack spacing={2}>
           <Text fontWeight="medium">Base Color</Text>
           <IconButton
             aria-label={locks.color ? "Unlock setting" : "Lock setting"}
@@ -721,6 +880,9 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
             variant="ghost"
             onClick={() => toggleLock('color')}
           />
+          <Tooltip label="The main color of the spiral" placement="top">
+            <InfoIcon boxSize={3} color="whiteAlpha.600" />
+          </Tooltip>
         </HStack>
         <Input
           id="baseColor"
@@ -735,6 +897,8 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           cursor="pointer"
         />
       </HStack>
+
+      <Divider />
     </VStack>
   )
 } 
