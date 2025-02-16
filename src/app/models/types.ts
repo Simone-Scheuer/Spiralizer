@@ -38,4 +38,12 @@ export interface SpiralConfig {
 // Type for tracking which settings are locked
 export type SpiralConfigLocks = {
   [K in keyof Omit<SpiralConfig, 'isPaused'>]: boolean
+}
+
+// Type for a saved preset
+export interface SpiralPreset {
+  id: string
+  name: string
+  config: Omit<SpiralConfig, 'isPaused' | 'audioEnabled' | 'audioVolume' | 'screensaverMode'>
+  createdAt: number
 } 

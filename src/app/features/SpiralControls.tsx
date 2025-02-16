@@ -20,6 +20,8 @@ import { SpiralConfig, SpiralConfigLocks } from '../models/types'
 import { BLEND_MODES, createRandomConfig } from '../utils/spiral'
 import { LockIcon, UnlockIcon, InfoIcon } from '@chakra-ui/icons'
 import { useEffect, useRef, useCallback } from 'react'
+import { PresetManager } from './PresetManager'
+import { SpiralPreset } from '../models/types'
 
 interface SpiralControlsProps {
   config: SpiralConfig
@@ -182,6 +184,27 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
     onLocksChange(allLocked)
   }
 
+  const handleLoadPreset = (preset: SpiralPreset) => {
+    // Preserve current audio and screensaver settings
+    const newConfig = {
+      ...preset.config,
+      audioEnabled: config.audioEnabled,
+      audioVolume: config.audioVolume,
+      screensaverMode: config.screensaverMode,
+      isPaused: true // Always start paused when loading a preset
+    }
+    
+    // Save to localStorage
+    try {
+      const { isPaused, ...configToSave } = newConfig
+      localStorage.setItem('spiralConfig', JSON.stringify(configToSave))
+    } catch (e) {
+      console.error('Error saving config to localStorage:', e)
+    }
+    
+    onChange(newConfig)
+  }
+
   // Helper component for control headers with lock button
   const ControlHeader = ({ label, value, settingKey, tooltip }: { label: string, value: string, settingKey: keyof SpiralConfigLocks, tooltip: string }) => (
     <HStack mb={2} justify="space-between">
@@ -272,6 +295,8 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
         </Button>
       </HStack>
 
+      <PresetManager config={config} onLoadPreset={handleLoadPreset} />
+
       <HStack width="100%" spacing={4}>
         <Button
           onClick={onResetToDefaults}
@@ -285,7 +310,10 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
           Reset All Settings
         </Button>
         <Button
-          onClick={handleRandomize}
+          onClick={(e) => {
+            e.preventDefault()
+            handleRandomize()
+          }}
           colorScheme="purple"
           size="md"
           flex={1}
@@ -323,24 +351,20 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
       </HStack>
 
       <HStack width="100%" spacing={4} justify="center" py={2}>
-        <Tooltip label="Toggle sound generation based on spiral parameters" placement="top">
-          <HStack spacing={3}>
-            <Text fontWeight="medium">🔊 Sound</Text>
-            <Switch
-              isChecked={config.audioEnabled}
-              onChange={(e) => handleChange('audioEnabled', e.target.checked)}
-            />
-          </HStack>
-        </Tooltip>
-        <Tooltip label="Automatically cycle through random patterns every 5 seconds" placement="top">
-          <HStack spacing={3}>
-            <Text fontWeight="medium">🎬 Screensaver</Text>
-            <Switch
-              isChecked={config.screensaverMode}
-              onChange={(e) => handleChange('screensaverMode', e.target.checked)}
-            />
-          </HStack>
-        </Tooltip>
+        <HStack spacing={3}>
+          <Text fontWeight="medium">🔊 Sound</Text>
+          <Switch
+            isChecked={config.audioEnabled}
+            onChange={(e) => handleChange('audioEnabled', e.target.checked)}
+          />
+        </HStack>
+        <HStack spacing={3}>
+          <Text fontWeight="medium">🎬 Screensaver</Text>
+          <Switch
+            isChecked={config.screensaverMode}
+            onChange={(e) => handleChange('screensaverMode', e.target.checked)}
+          />
+        </HStack>
       </HStack>
 
       <Divider />
