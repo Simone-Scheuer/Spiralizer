@@ -55,7 +55,7 @@ export const useSpiralAnimation = (
     return config.fadeOpacity 
       ? `${config.color}${Math.floor(Math.max(0.1, 1 - stepCountRef.current * 0.001) * 255).toString(16).padStart(2, '0')}`
       : config.color
-  }, [config.rainbowMode, config.color, config.fadeOpacity])
+  }, [config.rainbowMode, config.color, config.fadeOpacity, canvasRef])
 
   const drawSpiral = useCallback(() => {
     const canvas = canvasRef.current

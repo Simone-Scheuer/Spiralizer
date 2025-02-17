@@ -40,30 +40,34 @@ class SpiralSoundGenerator {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      this.audioContext = new AudioContext()
-      
-      // Create effects chain
-      this.masterGain = this.audioContext.createGain()
-      this.masterGain.gain.value = 0.1
-
-      // Create reverb
-      this.reverbNode = this.audioContext.createConvolver()
-      this.createReverb()
-
-      // Add delay effect for more space
-      this.delayNode = this.audioContext.createDelay(1.0)
-      this.delayNode.delayTime.value = 0.2
-      const delayGain = this.audioContext.createGain()
-      delayGain.gain.value = 0.2
-
-      // Connect effects chain
-      this.delayNode.connect(delayGain)
-      delayGain.connect(this.reverbNode)
-      this.reverbNode.connect(this.masterGain)
-      this.masterGain.connect(this.audioContext.destination)
-
-      this.setupOscillators()
+      void this.initialize()
     }
+  }
+
+  private async initialize() {
+    this.audioContext = new AudioContext()
+    
+    // Create effects chain
+    this.masterGain = this.audioContext.createGain()
+    this.masterGain.gain.value = 0.1
+
+    // Create reverb
+    this.reverbNode = this.audioContext.createConvolver()
+    await this.createReverb()
+
+    // Add delay effect for more space
+    this.delayNode = this.audioContext.createDelay(1.0)
+    this.delayNode.delayTime.value = 0.2
+    const delayGain = this.audioContext.createGain()
+    delayGain.gain.value = 0.2
+
+    // Connect effects chain
+    this.delayNode.connect(delayGain)
+    delayGain.connect(this.reverbNode)
+    this.reverbNode.connect(this.masterGain)
+    this.masterGain.connect(this.audioContext.destination)
+
+    await this.setupOscillators()
   }
 
   private async createReverb() {
@@ -75,21 +79,22 @@ class SpiralSoundGenerator {
       const length = audioContext.sampleRate * 2.5
       const impulse = audioContext.createBuffer(2, length, audioContext.sampleRate)
       
-      await Promise.all([0, 1].map(async channel => {
+      const channelPromises = [0, 1].map(async channel => {
         const channelData = impulse.getChannelData(channel)
         for (let i = 0; i < length; i++) {
           const decay = Math.exp(-i / (audioContext.sampleRate * 0.5))
           channelData[i] = (Math.random() * 2 - 1) * decay
         }
-      }))
-      
+      })
+
+      await Promise.all(channelPromises)
       this.reverbNode.buffer = impulse
     } catch (error) {
       console.error('Error creating reverb:', error)
     }
   }
 
-  private setupOscillators() {
+  private async setupOscillators() {
     if (!this.audioContext || !this.masterGain || !this.delayNode || !this.reverbNode) return
 
     // Clean up existing oscillators
@@ -99,8 +104,8 @@ class SpiralSoundGenerator {
     this.filterNodes = []
 
     // Create oscillators for each waveform set
-    WAVEFORM_SETS.forEach((waveforms, setIndex) => {
-      BASE_SCALE.forEach((baseFreq, noteIndex) => {
+    WAVEFORM_SETS.forEach((waveforms) => {
+      BASE_SCALE.forEach((baseFreq) => {
         waveforms.forEach((waveform, waveformIndex) => {
           // Create oscillator with unique waveform
           const oscillator = this.audioContext!.createOscillator()
@@ -176,24 +181,21 @@ class SpiralSoundGenerator {
     const releaseTime = Math.max(0.05, Math.min(0.5, stepLength / 50))
     
     // stepMultiplier → Timbre evolution
-    const timbreIndex = Math.floor((stepMultiplier + 1) * 2) % WAVEFORM_SETS.length
     const filterSweepRange = 1000 + (stepMultiplier * 6000)
     
     this.oscillators.forEach((osc, index) => {
-      const setIndex = Math.floor(index / (BASE_SCALE.length * 3))
-      const noteIndex = Math.floor((index % (BASE_SCALE.length * 3)) / 3)
       const waveformIndex = index % 3
       
       // Calculate base frequency with more dramatic shifts
-      let targetFreq = BASE_SCALE[(noteIndex + noteShift) % BASE_SCALE.length]
+      let targetFreq = BASE_SCALE[(Math.floor((index % (BASE_SCALE.length * 3)) / 3) + noteShift) % BASE_SCALE.length]
       
       // Apply more dramatic pitch modifications based on parameters
       if (reverseDirection) {
         // Reverse direction creates descending patterns
-        targetFreq *= 0.5 + (noteIndex * 0.1)
+        targetFreq *= 0.5 + (Math.floor((index % (BASE_SCALE.length * 3)) / 3) * 0.1)
       } else {
         // Forward direction creates ascending patterns
-        targetFreq *= 1 + (noteIndex * 0.1)
+        targetFreq *= 1 + (Math.floor((index % (BASE_SCALE.length * 3)) / 3) * 0.1)
       }
       
       // Oscillation creates more dramatic pitch modulation
@@ -207,7 +209,7 @@ class SpiralSoundGenerator {
       targetFreq *= 1 + (harmonicSpread * 0.02 * waveformIndex)
       
       // Calculate rhythmic pattern
-      const patternPosition = (normalizedProgress * patternLength + (noteIndex * textureIntensity)) % 1
+      const patternPosition = (normalizedProgress * patternLength + (Math.floor((index % (BASE_SCALE.length * 3)) / 3) * textureIntensity)) % 1
       const beatPosition = (currentBeat + (index * 0.125 * textureIntensity)) % 1
       
       // Calculate gain with more dynamic envelope
@@ -268,7 +270,7 @@ class SpiralSoundGenerator {
     if (!this.audioContext) return
     
     if (this.audioContext.state === 'suspended') {
-      this.audioContext.resume()
+      void this.audioContext.resume()
     }
     
     this.isPlaying = true
@@ -289,15 +291,15 @@ class SpiralSoundGenerator {
   }
 
   setVolume(volume: number) {
-    if (this.masterGain) {
-      this.masterGain.gain.setTargetAtTime(volume * 0.2, this.audioContext!.currentTime, 0.1)
+    if (this.masterGain && this.audioContext) {
+      this.masterGain.gain.setTargetAtTime(volume * 0.2, this.audioContext.currentTime, 0.1)
     }
   }
 
   cleanup() {
     if (this.audioContext) {
       this.oscillators.forEach(osc => osc.stop())
-      this.audioContext.close()
+      void this.audioContext.close()
     }
   }
 }

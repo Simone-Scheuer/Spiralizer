@@ -48,13 +48,17 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
 
       try {
         if (!isFullscreen && containerRef.current) {
-          await containerRef.current.requestFullscreen().catch(error => {
+          try {
+            await containerRef.current.requestFullscreen()
+          } catch (error) {
             console.error('Error entering fullscreen:', error)
-          })
+          }
         } else if (document.fullscreenElement) {
-          await document.exitFullscreen().catch(error => {
+          try {
+            await document.exitFullscreen()
+          } catch (error) {
             console.error('Error exiting fullscreen:', error)
-          })
+          }
         }
       } catch (error) {
         console.error('Error toggling fullscreen:', error)
@@ -63,7 +67,7 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
 
     // Handle keyboard shortcuts
     useEffect(() => {
-      const handleKeyPress = (e: KeyboardEvent) => {
+      const handleKeyPress = async (e: KeyboardEvent) => {
         // Only handle if not typing in an input
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
           return
@@ -90,7 +94,7 @@ export const SpiralCanvas = forwardRef<SpiralCanvasRef, SpiralCanvasProps>(
             break
           case 'KeyF':
             e.preventDefault()
-            toggleFullscreen()
+            await toggleFullscreen()
             break
           case 'Equal': // Plus key
             if (e.metaKey || e.ctrlKey) {

@@ -9,7 +9,6 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  MenuDivider,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -19,9 +18,6 @@ import {
   useDisclosure,
   Box,
   MenuGroup,
-  MenuOptionGroup,
-  MenuItemOption,
-  Flex,
 } from '@chakra-ui/react'
 import { ChevronDownIcon, DeleteIcon } from '@chakra-ui/icons'
 import { useState, useEffect } from 'react'
@@ -81,7 +77,12 @@ export const PresetManager = ({ config, onLoadPreset }: PresetManagerProps) => {
     }
 
     // Create new preset, omitting the specified properties
-    const { isPaused, audioEnabled, audioVolume, screensaverMode, ...configToSave } = config
+    const configToSave = Object.fromEntries(
+      Object.entries(config).filter(([key]) => 
+        !['isPaused', 'audioEnabled', 'audioVolume', 'screensaverMode'].includes(key)
+      )
+    ) as Omit<SpiralConfig, 'isPaused' | 'audioEnabled' | 'audioVolume' | 'screensaverMode'>
+    
     const newPreset: SpiralPreset = {
       id: Date.now().toString(),
       name: newPresetName.trim(),

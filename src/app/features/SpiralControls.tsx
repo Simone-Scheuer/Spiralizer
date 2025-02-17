@@ -43,7 +43,9 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
     
     // Save to localStorage (except isPaused state)
     try {
-      const { isPaused, ...configToSave } = newConfig
+      const configToSave = Object.fromEntries(
+        Object.entries(newConfig).filter(([k]) => k !== 'isPaused')
+      )
       localStorage.setItem('spiralConfig', JSON.stringify(configToSave))
     } catch (e) {
       console.error('Error saving config to localStorage:', e)
@@ -57,7 +59,9 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
     
     // Save to localStorage (except isPaused state)
     try {
-      const { isPaused: _, ...configToSave } = newConfig
+      const configToSave = Object.fromEntries(
+        Object.entries(newConfig).filter(([k]) => k !== 'isPaused')
+      )
       localStorage.setItem('spiralConfig', JSON.stringify(configToSave))
     } catch (e) {
       console.error('Error saving config to localStorage:', e)
@@ -196,7 +200,9 @@ export const SpiralControls = ({ config, onChange, onReset, onResetToDefaults, l
     
     // Save to localStorage
     try {
-      const { isPaused, ...configToSave } = newConfig
+      const configToSave = Object.fromEntries(
+        Object.entries(newConfig).filter(([k]) => k !== 'isPaused')
+      )
       localStorage.setItem('spiralConfig', JSON.stringify(configToSave))
     } catch (e) {
       console.error('Error saving config to localStorage:', e)
