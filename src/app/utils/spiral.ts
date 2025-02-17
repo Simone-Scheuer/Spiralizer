@@ -33,6 +33,18 @@ export const randomColor = () => {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
+// Predefined gradient pairs for better-looking random gradients
+const GRADIENT_PAIRS: [string, string][] = [
+  ['#0066ff', '#00ffff'], // Blue to Cyan
+  ['#ff0066', '#ff00ff'], // Red to Magenta
+  ['#66ff00', '#ffff00'], // Green to Yellow
+  ['#ff3300', '#ffcc00'], // Orange to Yellow
+  ['#6600ff', '#ff00ff'], // Purple to Magenta
+  ['#00ff66', '#00ffff'], // Mint to Cyan
+  ['#ff0033', '#ff9900'], // Red to Orange
+  ['#3300ff', '#00ffff'], // Deep Blue to Cyan
+]
+
 // Function to create new random settings while respecting locks
 export const createRandomConfig = (currentConfig: SpiralConfig, locks: SpiralConfigLocks): SpiralConfig => {
   // Log current locks state for debugging
@@ -54,6 +66,15 @@ export const createRandomConfig = (currentConfig: SpiralConfig, locks: SpiralCon
     fadeOpacity: locks.fadeOpacity ? currentConfig.fadeOpacity : Math.random() > 0.5,
     rainbowMode: locks.rainbowMode ? currentConfig.rainbowMode : Math.random() > 0.5,
     rainbowSpeed: locks.rainbowSpeed ? currentConfig.rainbowSpeed : randomInRange(0.1, 5, 0.1),
+    // New gradient options
+    gradientMode: locks.gradientMode ? currentConfig.gradientMode : Math.random() > 0.5,
+    gradientColors: locks.gradientColors ? currentConfig.gradientColors : 
+      Math.random() > 0.3 ? 
+        GRADIENT_PAIRS[Math.floor(Math.random() * GRADIENT_PAIRS.length)] : 
+        [randomColor(), randomColor()],
+    gradientSpeed: locks.gradientSpeed ? currentConfig.gradientSpeed : randomInRange(0.1, 5, 0.1),
+    gradientReverse: locks.gradientReverse ? currentConfig.gradientReverse : Math.random() > 0.5,
+    // Rest of existing options
     blendMode: locks.blendMode ? currentConfig.blendMode : BLEND_MODES[Math.floor(Math.random() * BLEND_MODES.length)],
     //originX: locks.originX ? currentConfig.originX : randomInRange(0, 1, 0.01),
     //originY: locks.originY ? currentConfig.originY : randomInRange(0, 1, 0.01),

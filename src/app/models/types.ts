@@ -14,6 +14,12 @@ export interface SpiralConfig {
   rotationOffset: number // Additional rotation offset per line
   rainbowMode: boolean   // Whether to cycle through colors
   rainbowSpeed: number   // Speed of color cycling
+  // New gradient options
+  gradientMode: boolean  // Whether to use gradient colors
+  gradientColors: [string, string] // Start and end colors for gradient
+  gradientSpeed: number  // Speed of gradient cycling
+  gradientReverse: boolean // Whether to reverse gradient direction
+  // Rest of existing options
   blendMode: string     // Canvas blend mode for interesting effects
   // Origin position (0-1 represents percentage of canvas size)
   originX: number       // X position of spiral origin (0-1)

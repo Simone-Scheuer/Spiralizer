@@ -52,15 +52,52 @@ export const useSpiralAnimation = (
       const hue = (hueRef.current + (lineIndex * 30)) % 360
       return `hsla(${hue}, 100%, 50%, ${config.fadeOpacity ? Math.max(0.1, 1 - stepCountRef.current * 0.001) : 1})`
     }
+    
+    if (config.gradientMode) {
+      // Convert hex colors to RGB for interpolation
+      const startColor = hexToRgb(config.gradientColors[0])
+      const endColor = hexToRgb(config.gradientColors[1])
+      
+      if (!startColor || !endColor) return config.color // Fallback if conversion fails
+      
+      // Calculate progress through gradient
+      let progress = ((hueRef.current / 360) + (lineIndex * 0.1)) % 1
+      if (config.gradientReverse) progress = 1 - progress
+      
+      // Interpolate between colors
+      const r = Math.round(startColor.r + (endColor.r - startColor.r) * progress)
+      const g = Math.round(startColor.g + (endColor.g - startColor.g) * progress)
+      const b = Math.round(startColor.b + (endColor.b - startColor.b) * progress)
+      
+      const opacity = config.fadeOpacity ? Math.max(0.1, 1 - stepCountRef.current * 0.001) : 1
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`
+    }
+    
     return config.fadeOpacity 
       ? `${config.color}${Math.floor(Math.max(0.1, 1 - stepCountRef.current * 0.001) * 255).toString(16).padStart(2, '0')}`
       : config.color
-  }, [config.rainbowMode, config.color, config.fadeOpacity, canvasRef])
+  }, [
+    config.rainbowMode,
+    config.color,
+    config.fadeOpacity,
+    config.gradientMode,
+    config.gradientColors,
+    config.gradientReverse
+  ])
+
+  // Add helper function for hex to RGB conversion
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null
+  }
 
   const drawSpiral = useCallback(() => {
+    if (!canvasRef.current) return
     const canvas = canvasRef.current
-    if (!canvas) return
-
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
@@ -170,9 +207,9 @@ export const useSpiralAnimation = (
     currentAngleRef.current += config.angleChange + (config.angleIncrement * stepCountRef.current)
     stepCountRef.current++
 
-    // Update rainbow hue if enabled
-    if (config.rainbowMode) {
-      hueRef.current = (hueRef.current + config.rainbowSpeed) % 360
+    // Update rainbow/gradient hue
+    if (config.rainbowMode || config.gradientMode) {
+      hueRef.current = (hueRef.current + (config.rainbowMode ? config.rainbowSpeed : config.gradientSpeed)) % 360
     }
 
     // Only continue animation if not paused
@@ -209,7 +246,10 @@ export const useSpiralAnimation = (
     config.oscillationSpeed,
     config.audioEnabled,
     getLineColor,
-    canvasSize
+    canvasSize,
+    config.gradientMode,
+    config.gradientSpeed,
+    canvasRef
   ])
 
   const resetCanvas = useCallback(() => {

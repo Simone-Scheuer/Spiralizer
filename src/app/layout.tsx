@@ -24,11 +24,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
       <head>
         <ColorMode />
       </head>
-      <body className={inter.className} style={{ backgroundColor: '#1A202C' }}>
+      <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
     </html>

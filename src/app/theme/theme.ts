@@ -4,7 +4,7 @@ export const theme = extendTheme(
   {
     config: {
       cssVarPrefix: 'starter-nextjs-simple',
-      initialColorMode: 'light',
+      initialColorMode: 'dark',
       useSystemColorMode: false,
       disableTransitionOnChange: false,
       storageManager: {
@@ -53,7 +53,7 @@ export const theme = extendTheme(
     },
     semanticTokens: {
       colors: {
-        'chakra-body-bg': { _light: 'white', _dark: 'gray.900' },
+        'chakra-body-bg': { _light: 'white', _dark: '#111827' },
         'chakra-border-color': { _light: 'gray.200', _dark: 'gray.700' },
         'chakra-body-text': { _light: 'gray.800', _dark: 'gray.100' },
         'chakra-inverse-text': { _light: 'gray.100', _dark: 'gray.800' },
@@ -112,7 +112,33 @@ export const theme = extendTheme(
       global: {
         'html, body': {
           bg: 'chakra-body-bg',
-          color: 'chakra-body-text'
+          color: 'chakra-body-text',
+          minH: '100vh',
+          margin: 0,
+          padding: 0,
+          overscrollBehavior: 'none'
+        },
+        '#__next': {
+          minH: '100vh',
+          bg: 'chakra-body-bg'
+        },
+        '#app': {
+          minH: '100vh',
+          bg: 'chakra-body-bg'
+        },
+        '*': {
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255, 255, 255, 0.16) transparent'
+        },
+        '*::-webkit-scrollbar': {
+          width: '6px',
+        },
+        '*::-webkit-scrollbar-track': {
+          background: 'transparent'
+        },
+        '*::-webkit-scrollbar-thumb': {
+          background: 'rgba(255, 255, 255, 0.16)',
+          borderRadius: '3px'
         }
       }
     }

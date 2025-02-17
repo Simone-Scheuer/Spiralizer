@@ -22,6 +22,12 @@ const defaultConfig: SpiralConfig = {
   rotationOffset: 0,
   rainbowMode: false,
   rainbowSpeed: 1,
+  // New gradient options
+  gradientMode: false,
+  gradientColors: ['#0066ff', '#00ffff'], // Default blue gradient
+  gradientSpeed: 1,
+  gradientReverse: false,
+  // Rest of existing options
   blendMode: 'source-over',
   // Origin position (0.5, 0.5 is center)
   originX: 0.5,
@@ -118,9 +124,6 @@ export default function Home() {
           <Heading size="2xl" bgGradient="linear(to-r, cyan.400, purple.500)" bgClip="text">
             Spiralizer
           </Heading>
-          <Text fontSize="lg" color="gray.400" textAlign="center">
-            Create mesmerizing spiral patterns with interactive controls
-          </Text>
         </VStack>
         
         <Grid 

@@ -1,6 +1,5 @@
 import {
   Button,
-  HStack,
   VStack,
   Input,
   Text,
@@ -18,6 +17,7 @@ import {
   useDisclosure,
   Box,
   MenuGroup,
+  ButtonGroup,
 } from '@chakra-ui/react'
 import { ChevronDownIcon, DeleteIcon } from '@chakra-ui/icons'
 import { useState, useEffect } from 'react'
@@ -128,17 +128,12 @@ export const PresetManager = ({ config, onLoadPreset }: PresetManagerProps) => {
 
   return (
     <>
-      <HStack 
-        width="100%" 
-        spacing={2} 
-        flexWrap="wrap" 
-        gap={2}
-      >
+      <ButtonGroup width="100%" spacing={4} mb={1}>
         <Button
           onClick={onOpen}
           colorScheme="yellow"
           size="md"
-          flex={{ base: "1 1 100%", sm: "1" }}
+          flex="1"
         >
           Save Settings
         </Button>
@@ -148,7 +143,7 @@ export const PresetManager = ({ config, onLoadPreset }: PresetManagerProps) => {
             rightIcon={<ChevronDownIcon />}
             colorScheme="blue"
             size="md"
-            flex={{ base: "1 1 100%", sm: "1" }}
+            flex="1"
             isDisabled={!isClient || presets.length === 0}
           >
             Load Preset {isClient && presets.length > 0 && `(${presets.length})`}
@@ -192,7 +187,7 @@ export const PresetManager = ({ config, onLoadPreset }: PresetManagerProps) => {
             </MenuList>
           )}
         </Menu>
-      </HStack>
+      </ButtonGroup>
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
