@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Container, Grid, Heading, Text, VStack } from '@chakra-ui/react'
+import { Box, Container, Grid, Heading, VStack } from '@chakra-ui/react'
 import { useRef, useState, useEffect } from 'react'
 import { SpiralCanvas, SpiralCanvasRef } from './features/SpiralCanvas'
 import { SpiralControls } from './features/SpiralControls'

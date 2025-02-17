@@ -78,7 +78,6 @@ export const useSpiralAnimation = (
       : config.color
   }, [
     config.rainbowMode,
-    config.color,
     config.fadeOpacity,
     config.gradientMode,
     config.gradientColors,
