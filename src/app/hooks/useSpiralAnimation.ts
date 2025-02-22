@@ -81,7 +81,8 @@ export const useSpiralAnimation = (
     config.fadeOpacity,
     config.gradientMode,
     config.gradientColors,
-    config.gradientReverse
+    config.gradientReverse,
+    config.color
   ])
 
   // Add helper function for hex to RGB conversion
