@@ -207,7 +207,7 @@ export const PresetManager = ({ config, onLoadPreset }: PresetManagerProps) => {
                 />
               </Box>
               <Button
-                colorScheme="red"
+                colorScheme="yellow"
                 width="100%"
                 onClick={handleSavePreset}
               >
